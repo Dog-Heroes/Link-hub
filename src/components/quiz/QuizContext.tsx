@@ -19,6 +19,7 @@ export interface DogData {
 export interface HealthData {
   neutered: string;     // "Sì" | "No"
   activity: string;
+  hunger: string;
   diet: string;
   allergies: string[];
   healthIssues: string[];
@@ -65,6 +66,7 @@ const initialState: QuizState = {
   health: {
     neutered: "No",
     activity: "",
+    hunger: "",
     diet: "",
     allergies: [],
     healthIssues: [],

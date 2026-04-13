@@ -52,6 +52,29 @@ export default function HealthStep() {
         </div>
       </FormField>
 
+      {/* Appetito */}
+      <FormField label="Come definiresti il suo appetito?">
+        <div className="flex gap-2 flex-wrap">
+          {quizData.hungerLevels.map((hl) => (
+            <button
+              key={hl.value}
+              type="button"
+              onClick={() => setHealth("hunger", hl.label)}
+              className={`
+                flex-1 min-w-[calc(50%-4px)] py-3 rounded-xl text-[13px] font-bold transition-colors min-h-[44px]
+                ${
+                  health.hunger === hl.label
+                    ? "bg-[#E1251B] text-white border-2 border-[#E1251B]"
+                    : "bg-white text-[#002B49] border-2 border-[#002B49]/10 hover:border-[#E1251B]/30"
+                }
+              `}
+            >
+              {hl.label}
+            </button>
+          ))}
+        </div>
+      </FormField>
+
       {/* Dieta attuale */}
       <FormField label="Dieta attuale" htmlFor="diet">
         <select

@@ -76,6 +76,12 @@
     { "value": "attivo", "label": "Attivo" },
     { "value": "molto_attivo", "label": "Molto attivo" }
   ],
+  "hungerLevels": [
+    { "value": "pignolo", "label": "Pignolo" },
+    { "value": "di-buon-appetito", "label": "Di buon appetito" },
+    { "value": "ghiotto", "label": "Ghiotto" },
+    { "value": "molto-esigente", "label": "Molto esigente" }
+  ],
   "diets": [
     { "value": "crocchette", "label": "Crocchette" },
     { "value": "casalingo", "label": "Casalingo" },
