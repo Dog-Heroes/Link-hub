@@ -1,26 +1,28 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "../styles/hub.css";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--dh-cream);
+  --color-foreground: var(--dh-navy);
+  --color-dh-red: var(--dh-red);
+  --color-dh-navy: var(--dh-navy);
+  --color-dh-pink: var(--dh-pink);
+  --color-dh-cream: var(--dh-cream);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-cardo);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #e8e4de;
+  color: var(--dh-navy);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Hide scrollbar on tab bar */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

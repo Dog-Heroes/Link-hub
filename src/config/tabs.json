@@ -1,0 +1,41 @@
+{
+  "tabs": [
+    {
+      "id": "links",
+      "label": "Links",
+      "icon": "link",
+      "enabled": true,
+      "order": 1,
+      "component": "LinksTab"
+    },
+    {
+      "id": "shop",
+      "label": "Shop",
+      "icon": "bag",
+      "enabled": true,
+      "order": 2,
+      "component": "ShopTab",
+      "requires_env": "NEXT_PUBLIC_ENABLE_SHOP_TAB"
+    },
+    {
+      "id": "quiz",
+      "label": "Piano su Misura",
+      "icon": "sparkle",
+      "enabled": true,
+      "order": 3,
+      "component": "QuizTab",
+      "requires_env": "NEXT_PUBLIC_ENABLE_QUIZ_TAB"
+    },
+    {
+      "id": "stores",
+      "label": "Store",
+      "icon": "pin",
+      "enabled": true,
+      "order": 4,
+      "component": "StoreLocatorTab",
+      "requires_env": "NEXT_PUBLIC_ENABLE_STORE_LOCATOR"
+    }
+  ],
+  "default_tab": "links",
+  "tab_bar_style": "scrollable"
+}

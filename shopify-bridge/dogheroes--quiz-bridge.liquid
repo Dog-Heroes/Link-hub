@@ -1,0 +1,104 @@
+{% doc %}
+  Bridge page that receives dog data from external quiz widget via URL params,
+  writes it to localStorage in the Dog model format, and redirects to /pages/quiz
+  at the customer-data step.
+
+  Usage:
+  1. Add this file to sections/dogheroes--quiz-bridge.liquid in the theme
+  2. Add templates/page.quiz-bridge.json pointing to this section
+  3. Create a page in Shopify Admin with template "page.quiz-bridge"
+  4. External widget redirects to: /pages/quiz-bridge?name=Pippo&breed=Labrador&sex=male&...
+
+  @example
+  URL: /pages/quiz-bridge?name=Pippo&breed=Labrador+Retriever&sex=male&birthday=2024-02-13&weight=12&build=ideal&activity=normal&sterilization=yes&diet=crocchette&allergies=pollo,manzo&has_diseases=no
+{% enddoc %}
+
+<div
+  id="quiz-bridge"
+  style="
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    font-family: inherit;
+  "
+>
+  <div style="text-align: center;">
+    <img
+      src="https://cdn.shopify.com/s/files/1/0942/6419/7497/files/logo-2.svg?v=1759315537"
+      alt="Dog Heroes"
+      width="100"
+      style="margin-bottom: 24px;"
+    >
+    <p style="font-size: 18px; color: #1c2541; font-weight: 700;">
+      Stiamo preparando il quiz per <span id="bridge-dog-name">il tuo cane</span>...
+    </p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+
+    // If no params, redirect to quiz start
+    if (!params.has('name')) {
+      window.location.replace('/pages/quiz');
+      return;
+    }
+
+    // Show dog name in loading message
+    var nameEl = document.getElementById('bridge-dog-name');
+    if (nameEl && params.get('name')) {
+      nameEl.textContent = params.get('name');
+    }
+
+    // Helper: parse CSV param into array, or null
+    function parseCSV(key) {
+      var val = params.get(key);
+      if (!val) return null;
+      return val.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+
+    // Generate handle (same logic as Dog model)
+    var name = (params.get('name') || '').trim();
+    var handleBase = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+    var handle = handleBase + '-' + Date.now();
+
+    // Build dog object in the exact Dog model format
+    var dogData = {
+      name: name,
+      handle: handle,
+      breed: params.get('breed') || null,
+      additional_breed: null,
+      sex: params.get('sex') || null,
+      birthday: params.get('birthday') || null,
+      birthday_type: 'approximate',
+      weight: params.get('weight') || null,
+      build: params.get('build') || null,
+      activity: params.get('activity') || null,
+      sterilization: params.get('sterilization') || null,
+      hunger: null,
+      diet: parseCSV('diet'),
+      allergies: parseCSV('allergies'),
+      has_diseases: params.get('has_diseases') || 'no',
+      diseases: parseCSV('diseases'),
+      daily_calories: null
+    };
+
+    // Write to localStorage in the format Dog.all() expects
+    try {
+      localStorage.setItem('dogheroes.dogs', JSON.stringify([dogData]));
+
+      // Set quiz step to 10 (customer-data step)
+      localStorage.setItem('dogheroes.quiz', '10');
+    } catch (e) {
+      console.error('[quiz-bridge] Failed to write localStorage:', e);
+    }
+
+    // Redirect to quiz (replace so bridge is not in browser history)
+    window.location.replace('/pages/quiz');
+  })();
+</script>

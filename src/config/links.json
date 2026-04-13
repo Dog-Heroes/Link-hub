@@ -1,0 +1,48 @@
+{
+  "hero_cta": {
+    "label": "Scopri i nostri piani",
+    "url": "https://www.dogheroes.com/piani",
+    "style": "primary"
+  },
+  "sections": [
+    {
+      "id": "popular",
+      "label": "I più cliccati",
+      "collapsed": false,
+      "links": [
+        {
+          "id": "piano-personalizzato",
+          "label": "Crea il piano personalizzato",
+          "url": "https://www.dogheroes.com/quiz",
+          "icon": "sparkle",
+          "badge": "Nuovo"
+        },
+        {
+          "id": "recensioni",
+          "label": "Leggi le recensioni",
+          "url": "https://www.dogheroes.com/recensioni",
+          "icon": "star"
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "label": "Seguici",
+      "collapsed": true,
+      "links": [
+        {
+          "id": "instagram",
+          "label": "Instagram",
+          "url": "https://instagram.com/dogheroes.it",
+          "icon": "instagram"
+        },
+        {
+          "id": "tiktok",
+          "label": "TikTok",
+          "url": "https://tiktok.com/@dogheroes.it",
+          "icon": "tiktok"
+        }
+      ]
+    }
+  ]
+}

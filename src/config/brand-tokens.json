@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "red": "#E1251B",
+    "navy": "#002B49",
+    "pink": "#EFB8A9",
+    "cream": "#F9F6F1",
+    "white": "#FFFFFF"
+  },
+  "typography": {
+    "hero": "15px",
+    "body": "14px",
+    "small": "12px",
+    "micro": "11px"
+  },
+  "touch_min": "44px"
+}

@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "id": "fallback-1",
+      "title": "Snack Pollo & Mela",
+      "handle": "snack-pollo-mela",
+      "image": null,
+      "price": "8.90",
+      "currency": "EUR",
+      "variantId": "0",
+      "checkoutUrl": "https://dogheroes.it"
+    },
+    {
+      "id": "fallback-2",
+      "title": "Snack Manzo & Zucca",
+      "handle": "snack-manzo-zucca",
+      "image": null,
+      "price": "8.90",
+      "currency": "EUR",
+      "variantId": "0",
+      "checkoutUrl": "https://dogheroes.it"
+    },
+    {
+      "id": "fallback-3",
+      "title": "Dental Stick Naturali",
+      "handle": "dental-stick",
+      "image": null,
+      "price": "12.90",
+      "currency": "EUR",
+      "variantId": "0",
+      "checkoutUrl": "https://dogheroes.it"
+    },
+    {
+      "id": "fallback-4",
+      "title": "Biscotti Salmone & Carota",
+      "handle": "biscotti-salmone-carota",
+      "image": null,
+      "price": "9.90",
+      "currency": "EUR",
+      "variantId": "0",
+      "checkoutUrl": "https://dogheroes.it"
+    }
+  ]
+}

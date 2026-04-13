@@ -1,0 +1,54 @@
+/* GT Pressura — Dog Heroes brand font */
+@font-face {
+  font-family: "GT Pressura";
+  src: url("/fonts/gt-pressura-light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GT Pressura";
+  src: url("/fonts/gt-pressura-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GT Pressura";
+  src: url("/fonts/gt-pressura-bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Brand colors */
+  --dh-red: #E1251B;
+  --dh-red-dark: #C41E16;
+  --dh-navy: #002B49;
+  --dh-pink: #EFB8A9;
+  --dh-cream: #F9F6F1;
+  --dh-white: #FFFFFF;
+
+  /* Typography */
+  --font-brand: "GT Pressura", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-cardo), "Cardo", Georgia, serif;
+
+  /* Touch targets */
+  --touch-min: 44px;
+
+  /* Typography mobile */
+  --text-hero: 16px;
+  --text-body: 14px;
+  --text-small: 12px;
+  --text-micro: 11px;
+
+  /* Border radius */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+}
