@@ -1,48 +1,37 @@
 import Image from "next/image";
 import TabBar from "./TabBar";
+import TrustpilotWidget from "./TrustpilotWidget";
 
 export default function HubShell() {
   return (
     <div className="min-h-screen bg-[#e8e4de] flex items-start justify-center">
       {/* Mobile-only container — max 430px, centered on desktop */}
-      <div className="w-full max-w-[430px] min-h-screen bg-[#F9F6F1] relative overflow-x-hidden shadow-2xl">
+      <div className="w-full max-w-[430px] min-h-screen bg-[#E1251B] relative overflow-x-hidden shadow-2xl">
         {/* Hero header — bold, full-bleed */}
-        <header className="relative bg-[#E1251B] px-6 pt-10 pb-8 text-center overflow-hidden">
-          {/* Decorative paw pattern — subtle background */}
-          <div className="absolute inset-0 opacity-[0.06]" aria-hidden>
-            <svg width="100%" height="100%" className="absolute inset-0">
-              <pattern id="paws" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                <circle cx="15" cy="12" r="5" fill="white" />
-                <circle cx="28" cy="8" r="4" fill="white" />
-                <circle cx="38" cy="14" r="4" fill="white" />
-                <circle cx="26" cy="22" r="7" fill="white" />
-              </pattern>
-              <rect width="100%" height="100%" fill="url(#paws)" />
-            </svg>
-          </div>
+        <header className="relative bg-[#E1251B] px-6 pt-10 pb-4 text-center">
 
           {/* Logo */}
-          <div className="relative mx-auto mb-4 w-[160px]">
+          <div className="relative mx-auto mb-4 w-[220px]">
             <Image
               src="/images/hub/logo-white.svg"
               alt="Dog Heroes"
-              width={160}
-              height={80}
+              width={220}
+              height={110}
               priority
               className="w-full h-auto"
             />
           </div>
 
-          {/* Tagline — serif, bold */}
+          {/* Tagline — GT Pressura */}
           <p
             className="relative text-white text-[15px] leading-snug font-normal tracking-wide"
-            style={{ fontFamily: "var(--font-cardo), Cardo, Georgia, serif" }}
+            style={{ fontFamily: "var(--font-brand)" }}
           >
-            Cibo fresco su misura per il tuo cane
+            L&apos;azienda italiana del cibo fresco
           </p>
 
           {/* Social icons row */}
-          <div className="relative flex justify-center gap-3 mt-5">
+          <div className="relative flex justify-center gap-5 mt-5">
             <SocialLink
               href="https://instagram.com/dogheroes.it"
               label="Instagram"
@@ -56,15 +45,33 @@ export default function HubShell() {
               <TikTokIcon />
             </SocialLink>
             <SocialLink
+              href="https://www.youtube.com/@dogheroes"
+              label="YouTube"
+            >
+              <YouTubeIcon />
+            </SocialLink>
+            <SocialLink
+              href="https://www.linkedin.com/company/dog-heroes/"
+              label="LinkedIn"
+            >
+              <LinkedInIcon />
+            </SocialLink>
+            <SocialLink
               href="https://www.facebook.com/dogheroes.it"
               label="Facebook"
             >
               <FacebookIcon />
             </SocialLink>
           </div>
+
+          {/* Trustpilot — always visible */}
+          <div className="relative mt-4">
+            <TrustpilotWidget />
+          </div>
+
         </header>
 
-        {/* Tab system */}
+        {/* Tab pills on red + content in white rounded box */}
         <TabBar />
       </div>
     </div>
@@ -87,10 +94,8 @@ function SocialLink({
       rel="noopener noreferrer"
       aria-label={label}
       className="
-        w-[44px] h-[44px] rounded-full
-        bg-white/20 backdrop-blur-sm
         flex items-center justify-center text-white
-        hover:bg-white/30 active:scale-95
+        hover:opacity-70 active:scale-95
         transition-all
       "
     >
@@ -113,6 +118,22 @@ function TikTokIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
       <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.83a8.28 8.28 0 004.76 1.5v-3.4a4.85 4.85 0 01-1-.24z" />
+    </svg>
+  );
+}
+
+function YouTubeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.67 31.67 0 000 12a31.67 31.67 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.67 31.67 0 0024 12a31.67 31.67 0 00-.5-5.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" />
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05a3.74 3.74 0 013.37-1.85c3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.12 2.06 2.06 0 010 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77A1.75 1.75 0 000 1.73v20.54A1.75 1.75 0 001.77 24h20.45A1.75 1.75 0 0024 22.27V1.73A1.75 1.75 0 0022.22 0z" />
     </svg>
   );
 }

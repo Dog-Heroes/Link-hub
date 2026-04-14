@@ -76,40 +76,6 @@ function LinkIcon({ name }: { name?: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  UGC Bar                                                            */
-/* ------------------------------------------------------------------ */
-
-function UGCBar() {
-  const rating = 4.8;
-  const reviewCount = 2347;
-
-  return (
-    <div className="flex items-center justify-center gap-2.5 py-3.5 px-4 bg-white rounded-2xl border-2 border-[#002B49]/10">
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <svg
-            key={star}
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill={star <= Math.round(rating) ? "#FACC15" : "none"}
-            stroke="#FACC15"
-            strokeWidth="2"
-          >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        ))}
-      </div>
-      <span className="text-[15px] font-extrabold text-[#002B49]">
-        {rating}
-      </span>
-      <span className="text-[13px] font-medium text-[#002B49]/50">
-        ({reviewCount.toLocaleString("it-IT")} recensioni)
-      </span>
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /*  Hero CTA                                                           */
 /* ------------------------------------------------------------------ */
@@ -296,7 +262,6 @@ export default function LinksTab() {
 
   return (
     <div className="px-4 pt-5 flex flex-col gap-4">
-      <UGCBar />
       <HeroCTAButton utm={utm} />
 
       <div className="flex flex-col gap-1 mt-1">

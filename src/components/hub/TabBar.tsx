@@ -43,8 +43,9 @@ export default function TabBar() {
   return (
     <>
       <nav
-        className="sticky top-0 z-20 bg-white flex overflow-x-auto scrollbar-none shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+        className="relative flex justify-center gap-2 overflow-x-auto scrollbar-none pt-2 pb-5 px-4"
         role="tablist"
+        style={{ fontFamily: "var(--font-brand)" }}
       >
         {activeTabs.map((tab) => (
           <button
@@ -53,14 +54,14 @@ export default function TabBar() {
             aria-selected={activeId === tab.id}
             onClick={() => setActiveId(tab.id)}
             className={`
-              flex-shrink-0 px-5 py-3.5
-              text-[14px] font-bold uppercase tracking-wide
-              border-b-[3px] transition-colors
-              min-h-[44px]
+              flex-shrink-0 px-5 py-2
+              text-[15px] font-bold tracking-wide
+              rounded-full transition-all
+              min-h-[36px] border-[1.5px]
               ${
                 activeId === tab.id
-                  ? "text-[#E1251B] border-[#E1251B]"
-                  : "text-gray-300 border-transparent hover:text-gray-400"
+                  ? "bg-white text-[#E1251B] border-white"
+                  : "bg-transparent text-white border-white/60 hover:border-white hover:bg-white/10"
               }
             `}
           >
@@ -69,7 +70,7 @@ export default function TabBar() {
         ))}
       </nav>
 
-      <div className="pb-8" role="tabpanel">
+      <div className="bg-white rounded-t-3xl min-h-[60vh] pb-8" role="tabpanel">
         {ActiveComponent && <ActiveComponent />}
       </div>
     </>
