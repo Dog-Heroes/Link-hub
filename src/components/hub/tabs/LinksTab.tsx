@@ -2,36 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import linksConfig from "@/config/links.json";
-import seasonalConfig from "@/config/seasonal.json";
 import { useUTM } from "@/hooks/useUTM";
 import { appendUTM } from "@/lib/utm";
 import { trackEvent } from "@/lib/analytics";
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-interface LinkItem {
-  id: string;
-  label: string;
-  url: string;
-  icon?: string;
-  badge?: string;
-}
-
-interface LinkSection {
-  id: string;
-  label: string;
-  collapsed: boolean;
-  links: LinkItem[];
-}
-
-interface HeroCTA {
-  label: string;
-  url: string;
-  style: string;
-}
+import type { SectionData, LinkData } from "../HubShell";
 
 /* ------------------------------------------------------------------ */
 /*  Icon map                                                           */
@@ -76,27 +50,33 @@ function LinkIcon({ name }: { name?: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
 /*  Hero CTA                                                           */
 /* ------------------------------------------------------------------ */
 
-function HeroCTAButton({ utm }: { utm: Record<string, string | undefined> }) {
-  const seasonal = seasonalConfig as {
-    active: boolean;
-    hero_cta_override: HeroCTA | null;
-  };
-  const cta: HeroCTA =
-    seasonal.active && seasonal.hero_cta_override
-      ? seasonal.hero_cta_override
-      : (linksConfig.hero_cta as HeroCTA);
+function HeroCTAButton({
+  utm,
+  sections,
+  links,
+}: {
+  utm: Record<string, string | undefined>;
+  sections: SectionData[];
+  links: LinkData[];
+}) {
+  // Hero CTA is the first link in the "hero_cta" section, or the first section's first link
+  const heroSection = sections.find((s) => s.id === "hero_cta");
+  const heroLink = heroSection
+    ? links.find((l) => l.section_id === heroSection.id)
+    : null;
 
-  const href = appendUTM(cta.url, utm);
+  if (!heroLink) return null;
+
+  const href = appendUTM(heroLink.url, utm);
 
   function handleClick() {
     trackEvent("link_hub_click", {
       link_id: "hero_cta",
-      label: cta.label,
-      url: cta.url,
+      label: heroLink!.label,
+      url: heroLink!.url,
     });
   }
 
@@ -114,7 +94,7 @@ function HeroCTAButton({ utm }: { utm: Record<string, string | undefined> }) {
         transition-all
       "
     >
-      {cta.label}
+      {heroLink.label}
     </a>
   );
 }
@@ -125,12 +105,16 @@ function HeroCTAButton({ utm }: { utm: Record<string, string | undefined> }) {
 
 function CollapsibleSection({
   section,
+  sectionLinks,
   utm,
 }: {
-  section: LinkSection;
+  section: SectionData;
+  sectionLinks: LinkData[];
   utm: Record<string, string | undefined>;
 }) {
   const [open, setOpen] = useState(!section.collapsed);
+
+  if (sectionLinks.length === 0) return null;
 
   return (
     <div>
@@ -170,7 +154,7 @@ function CollapsibleSection({
             className="overflow-hidden"
           >
             <div className="flex flex-col gap-3 pb-2">
-              {section.links.map((link) => (
+              {sectionLinks.map((link) => (
                 <LinkCard key={link.id} link={link} utm={utm} />
               ))}
             </div>
@@ -189,7 +173,7 @@ function LinkCard({
   link,
   utm,
 }: {
-  link: LinkItem;
+  link: LinkData;
   utm: Record<string, string | undefined>;
 }) {
   const href = appendUTM(link.url, utm);
@@ -256,17 +240,30 @@ function LinkCard({
 /*  LinksTab                                                           */
 /* ------------------------------------------------------------------ */
 
-export default function LinksTab() {
+export default function LinksTab({
+  sections = [],
+  links = [],
+}: {
+  sections?: SectionData[];
+  links?: LinkData[];
+}) {
   const utm = useUTM();
-  const sections = linksConfig.sections as LinkSection[];
+
+  // Separate hero_cta section from regular sections
+  const regularSections = sections.filter((s) => s.id !== "hero_cta");
 
   return (
     <div className="px-4 pt-5 flex flex-col gap-4">
-      <HeroCTAButton utm={utm} />
+      <HeroCTAButton utm={utm} sections={sections} links={links} />
 
       <div className="flex flex-col gap-1 mt-1">
-        {sections.map((section) => (
-          <CollapsibleSection key={section.id} section={section} utm={utm} />
+        {regularSections.map((section) => (
+          <CollapsibleSection
+            key={section.id}
+            section={section}
+            sectionLinks={links.filter((l) => l.section_id === section.id)}
+            utm={utm}
+          />
         ))}
       </div>
     </div>

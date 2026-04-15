@@ -3,6 +3,42 @@ import TabBar from "./TabBar";
 import TrustpilotWidget from "./TrustpilotWidget";
 import { db } from "@/lib/db";
 
+/* ------------------------------------------------------------------ */
+/*  Types shared with client components                                */
+/* ------------------------------------------------------------------ */
+
+export interface TabData {
+  id: string;
+  label: string;
+  icon: string;
+  order: number;
+  component_key: string;
+}
+
+export interface SectionData {
+  id: string;
+  tab_id: string;
+  label: string;
+  order: number;
+  collapsed: boolean;
+}
+
+export interface LinkData {
+  id: string;
+  section_id: string;
+  label: string;
+  url: string;
+  icon: string;
+  badge: string | null;
+  order: number;
+  link_type: string;
+  media_url: string | null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Icons                                                              */
+/* ------------------------------------------------------------------ */
+
 const ICON_MAP: Record<string, () => React.JSX.Element> = {
   instagram: InstagramIcon,
   tiktok: TikTokIcon,
@@ -11,44 +47,82 @@ const ICON_MAP: Record<string, () => React.JSX.Element> = {
   facebook: FacebookIcon,
 };
 
-async function getSocialLinks() {
+/* ------------------------------------------------------------------ */
+/*  Data fetching                                                      */
+/* ------------------------------------------------------------------ */
+
+async function getContent() {
   try {
-    const result = await db.execute(
-      'SELECT platform, url FROM social_links WHERE enabled = 1 ORDER BY "order"'
-    );
-    return result.rows.map((r) => ({
+    const [settingsRows, tabsRows, sectionsRows, linksRows, socialRows] =
+      await Promise.all([
+        db.execute("SELECT key, value FROM settings"),
+        db.execute('SELECT * FROM tabs WHERE enabled = 1 ORDER BY "order"'),
+        db.execute('SELECT * FROM sections ORDER BY "order"'),
+        db.execute('SELECT * FROM links WHERE enabled = 1 ORDER BY "order"'),
+        db.execute(
+          'SELECT platform, url FROM social_links WHERE enabled = 1 ORDER BY "order"'
+        ),
+      ]);
+
+    const settings: Record<string, string> = {};
+    for (const row of settingsRows.rows) {
+      settings[String(row.key)] = String(row.value);
+    }
+
+    const tabs: TabData[] = tabsRows.rows.map((r) => ({
+      id: String(r.id),
+      label: String(r.label),
+      icon: String(r.icon),
+      order: Number(r.order),
+      component_key: String(r.component_key),
+    }));
+
+    const sections: SectionData[] = sectionsRows.rows.map((r) => ({
+      id: String(r.id),
+      tab_id: String(r.tab_id),
+      label: String(r.label),
+      order: Number(r.order),
+      collapsed: Boolean(r.collapsed),
+    }));
+
+    const links: LinkData[] = linksRows.rows.map((r) => ({
+      id: String(r.id),
+      section_id: String(r.section_id),
+      label: String(r.label),
+      url: String(r.url),
+      icon: String(r.icon),
+      badge: r.badge ? String(r.badge) : null,
+      order: Number(r.order),
+      link_type: String(r.link_type),
+      media_url: r.media_url ? String(r.media_url) : null,
+    }));
+
+    const socialLinks = socialRows.rows.map((r) => ({
       platform: String(r.platform),
       url: String(r.url),
     }));
-  } catch {
-    // Fallback if DB not available
-    return [
-      { platform: "instagram", url: "https://instagram.com/dogheroes.it" },
-      { platform: "tiktok", url: "https://tiktok.com/@dogheroes.it" },
-      { platform: "youtube", url: "https://www.youtube.com/@dogheroes" },
-      { platform: "linkedin", url: "https://www.linkedin.com/company/dog-heroes/" },
-      { platform: "facebook", url: "https://www.facebook.com/dogheroes.it" },
-    ];
-  }
-}
 
-async function getSetting(key: string, fallback: string) {
-  try {
-    const result = await db.execute({
-      sql: "SELECT value FROM settings WHERE key = ?",
-      args: [key],
-    });
-    return result.rows[0] ? String(result.rows[0].value) : fallback;
+    return { settings, tabs, sections, links, socialLinks };
   } catch {
-    return fallback;
+    return {
+      settings: {} as Record<string, string>,
+      tabs: [] as TabData[],
+      sections: [] as SectionData[],
+      links: [] as LinkData[],
+      socialLinks: [
+        { platform: "instagram", url: "https://instagram.com/dogheroes.it" },
+        { platform: "tiktok", url: "https://tiktok.com/@dogheroes.it" },
+        { platform: "youtube", url: "https://www.youtube.com/@dogheroes" },
+        { platform: "linkedin", url: "https://www.linkedin.com/company/dog-heroes/" },
+        { platform: "facebook", url: "https://www.facebook.com/dogheroes.it" },
+      ],
+    };
   }
 }
 
 export default async function HubShell() {
-  const [socialLinks, tagline] = await Promise.all([
-    getSocialLinks(),
-    getSetting("tagline", "L'azienda italiana del cibo fresco"),
-  ]);
+  const { settings, tabs, sections, links, socialLinks } = await getContent();
+  const tagline = settings.tagline || "L'azienda italiana del cibo fresco";
 
   return (
     <div className="min-h-screen bg-[#e8e4de] flex items-start justify-center">
@@ -93,7 +167,7 @@ export default async function HubShell() {
           </div>
         </header>
 
-        <TabBar />
+        <TabBar tabs={tabs} sections={sections} links={links} settings={settings} />
       </div>
     </div>
   );

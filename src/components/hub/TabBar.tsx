@@ -1,43 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import tabsConfig from "@/config/tabs.json";
 import { TAB_REGISTRY } from "./TabRegistry";
+import type { TabData, SectionData, LinkData } from "./HubShell";
 
-interface TabConfig {
-  id: string;
-  label: string;
-  icon: string;
-  enabled: boolean;
-  order: number;
-  component: string;
-  requires_env?: string;
+interface TabBarProps {
+  tabs: TabData[];
+  sections: SectionData[];
+  links: LinkData[];
+  settings: Record<string, string>;
 }
 
-// Next.js only inlines NEXT_PUBLIC_ env vars when accessed as static literals.
-// Dynamic process.env[key] won't work in client components — build a lookup map.
-const ENV_FLAGS: Record<string, string | undefined> = {
-  NEXT_PUBLIC_ENABLE_SHOP_TAB: process.env.NEXT_PUBLIC_ENABLE_SHOP_TAB,
-  NEXT_PUBLIC_ENABLE_QUIZ_TAB: process.env.NEXT_PUBLIC_ENABLE_QUIZ_TAB,
-  NEXT_PUBLIC_ENABLE_STORE_LOCATOR: process.env.NEXT_PUBLIC_ENABLE_STORE_LOCATOR,
-};
+export default function TabBar({ tabs, sections, links, settings }: TabBarProps) {
+  const defaultTab = tabs[0]?.id ?? "links";
+  const [activeId, setActiveId] = useState(defaultTab);
 
-function getActiveTabs(): TabConfig[] {
-  return (tabsConfig.tabs as TabConfig[])
-    .filter((t) => t.enabled)
-    .filter(
-      (t) => !t.requires_env || ENV_FLAGS[t.requires_env] === "true"
-    )
-    .sort((a, b) => a.order - b.order);
-}
-
-export default function TabBar() {
-  const activeTabs = getActiveTabs();
-  const [activeId, setActiveId] = useState(tabsConfig.default_tab);
-
-  const activeTab = activeTabs.find((t) => t.id === activeId);
+  const activeTab = tabs.find((t) => t.id === activeId);
   const ActiveComponent = activeTab
-    ? TAB_REGISTRY[activeTab.component]
+    ? TAB_REGISTRY[activeTab.component_key]
     : null;
 
   return (
@@ -47,7 +27,7 @@ export default function TabBar() {
         role="tablist"
         style={{ fontFamily: "var(--font-brand)" }}
       >
-        {activeTabs.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             role="tab"
@@ -71,7 +51,13 @@ export default function TabBar() {
       </nav>
 
       <div className="bg-white rounded-t-3xl min-h-[60vh] pb-8" role="tabpanel">
-        {ActiveComponent && <ActiveComponent />}
+        {ActiveComponent && (
+          <ActiveComponent
+            sections={sections.filter((s) => s.tab_id === activeTab?.id)}
+            links={links}
+            settings={settings}
+          />
+        )}
       </div>
     </>
   );
