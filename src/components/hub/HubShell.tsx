@@ -1,6 +1,7 @@
 import Image from "next/image";
 import TabBar from "./TabBar";
 import TrustpilotWidget from "./TrustpilotWidget";
+import ViewTracker from "./ViewTracker";
 import { db } from "@/lib/db";
 
 /* ------------------------------------------------------------------ */
@@ -126,6 +127,7 @@ export default async function HubShell() {
 
   return (
     <div className="min-h-screen bg-[#e8e4de] flex items-start justify-center">
+      <ViewTracker />
       <div className="w-full max-w-[430px] min-h-screen bg-[#E1251B] relative overflow-x-hidden shadow-2xl">
         <header className="relative bg-[#E1251B] px-6 pt-10 pb-4 text-center">
           {/* Logo */}
