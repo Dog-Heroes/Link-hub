@@ -38,8 +38,16 @@ interface LinkItem {
   order: number;
   enabled: number;
   link_type: string;
+  media_url: string | null;
   click_count: number;
 }
+
+const LINK_TYPES = [
+  { value: "link", label: "Link", icon: "🔗" },
+  { value: "thumbnail", label: "Thumbnail", icon: "🖼️" },
+  { value: "featured", label: "Featured", icon: "📸" },
+  { value: "youtube", label: "YouTube", icon: "▶️" },
+] as const;
 
 interface Props {
   initialSections: Section[];
@@ -77,10 +85,10 @@ export default function LinksManager({ initialSections, initialLinks }: Props) {
   }, []);
 
   // --- Save edit ---
-  const saveLink = useCallback(async (id: string, label: string, url: string) => {
-    setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, label, url } : l)));
+  const saveLink = useCallback(async (id: string, updates: Partial<LinkItem>) => {
+    setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
     setEditingId(null);
-    await api("links", "PATCH", { id, label, url });
+    await api("links", "PATCH", { id, ...updates });
   }, []);
 
   // --- Delete ---
@@ -90,17 +98,18 @@ export default function LinksManager({ initialSections, initialLinks }: Props) {
   }, []);
 
   // --- Add link ---
-  const addLink = useCallback(async (sectionId: string, label: string, url: string) => {
+  const addLink = useCallback(async (sectionId: string, data: { label: string; url: string; link_type: string; media_url: string; badge: string }) => {
     const id = crypto.randomUUID();
     const sectionLinks = links.filter((l) => l.section_id === sectionId);
     const order = sectionLinks.length;
     const newLink: LinkItem = {
-      id, section_id: sectionId, label, url, icon: "link",
-      badge: null, order, enabled: 1, link_type: "link", click_count: 0,
+      id, section_id: sectionId, label: data.label, url: data.url, icon: "link",
+      badge: data.badge || null, order, enabled: 1, link_type: data.link_type,
+      media_url: data.media_url || null, click_count: 0,
     };
     setLinks((prev) => [...prev, newLink]);
     setAddingTo(null);
-    await api("links", "POST", { id, section_id: sectionId, label, url, order });
+    await api("links", "POST", { id, section_id: sectionId, ...data, order });
   }, [links]);
 
   // --- Add section ---
@@ -228,7 +237,7 @@ export default function LinksManager({ initialSections, initialLinks }: Props) {
               {/* Add link */}
               {addingTo === section.id ? (
                 <AddLinkForm
-                  onSave={(label, url) => addLink(section.id, label, url)}
+                  onSave={(data) => addLink(section.id, data)}
                   onCancel={() => setAddingTo(null)}
                 />
               ) : (
@@ -269,12 +278,13 @@ function SortableLink({
   link: LinkItem;
   isEditing: boolean;
   onEdit: () => void;
-  onSave: (id: string, label: string, url: string) => void;
+  onSave: (id: string, updates: Partial<LinkItem>) => void;
   onCancel: () => void;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
+  const typeInfo = LINK_TYPES.find((t) => t.value === link.link_type) ?? LINK_TYPES[0];
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -294,7 +304,10 @@ function SortableLink({
         <EditLinkForm link={link} onSave={onSave} onCancel={onCancel} />
       ) : (
         <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
-          <p className="text-sm font-medium text-gray-800 truncate">{link.label}</p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" title={typeInfo.label}>{typeInfo.icon}</span>
+            <p className="text-sm font-medium text-gray-800 truncate">{link.label}</p>
+          </div>
           <p className="text-xs text-gray-400 truncate">{link.url}</p>
         </div>
       )}
@@ -340,33 +353,71 @@ function EditLinkForm({
   onCancel,
 }: {
   link: LinkItem;
-  onSave: (id: string, label: string, url: string) => void;
+  onSave: (id: string, updates: Partial<LinkItem>) => void;
   onCancel: () => void;
 }) {
   const [label, setLabel] = useState(link.label);
   const [url, setUrl] = useState(link.url);
+  const [linkType, setLinkType] = useState(link.link_type);
+  const [mediaUrl, setMediaUrl] = useState(link.media_url || "");
+  const [badge, setBadge] = useState(link.badge || "");
+
+  const needsMedia = linkType === "thumbnail" || linkType === "featured" || linkType === "youtube";
 
   return (
-    <div className="flex-1 flex gap-2 items-center">
-      <input
-        autoFocus
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-        placeholder="Titolo"
-      />
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-        placeholder="URL"
-      />
-      <button onClick={() => onSave(link.id, label, url)} className="text-xs font-bold text-white bg-[#E1251B] px-3 py-1.5 rounded-lg hover:bg-[#C41E16]">
-        Salva
-      </button>
-      <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600">
-        Annulla
-      </button>
+    <div className="flex-1 flex flex-col gap-2">
+      {/* Row 1: type + label + url */}
+      <div className="flex gap-2 items-center">
+        <select
+          value={linkType}
+          onChange={(e) => setLinkType(e.target.value)}
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#E1251B] bg-white"
+        >
+          {LINK_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+          ))}
+        </select>
+        <input
+          autoFocus
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="Titolo"
+        />
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="URL"
+        />
+      </div>
+
+      {/* Row 2: media + badge */}
+      <div className="flex gap-2 items-center">
+        {needsMedia && (
+          <input
+            value={mediaUrl}
+            onChange={(e) => setMediaUrl(e.target.value)}
+            className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+            placeholder={linkType === "youtube" ? "URL video YouTube" : "URL immagine"}
+          />
+        )}
+        <input
+          value={badge}
+          onChange={(e) => setBadge(e.target.value)}
+          className="w-28 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="Badge"
+        />
+        <button
+          onClick={() => onSave(link.id, { label, url, link_type: linkType, media_url: mediaUrl || null, badge: badge || null } as Partial<LinkItem>)}
+          className="text-xs font-bold text-white bg-[#E1251B] px-3 py-1.5 rounded-lg hover:bg-[#C41E16]"
+        >
+          Salva
+        </button>
+        <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600">
+          Annulla
+        </button>
+      </div>
     </div>
   );
 }
@@ -375,34 +426,66 @@ function EditLinkForm({
 /*  Add Link Form                                                      */
 /* ------------------------------------------------------------------ */
 
-function AddLinkForm({ onSave, onCancel }: { onSave: (label: string, url: string) => void; onCancel: () => void }) {
+function AddLinkForm({ onSave, onCancel }: { onSave: (data: { label: string; url: string; link_type: string; media_url: string; badge: string }) => void; onCancel: () => void }) {
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
+  const [linkType, setLinkType] = useState("link");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [badge, setBadge] = useState("");
+
+  const needsMedia = linkType === "thumbnail" || linkType === "featured" || linkType === "youtube";
 
   return (
-    <div className="flex gap-2 items-center px-5 py-3 bg-gray-50 border-t border-gray-200">
-      <input
-        autoFocus
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-        placeholder="Titolo link"
-      />
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-        placeholder="https://..."
-      />
-      <button
-        onClick={() => { if (label.trim()) onSave(label, url); }}
-        className="text-xs font-bold text-white bg-[#E1251B] px-3 py-1.5 rounded-lg hover:bg-[#C41E16]"
-      >
-        Aggiungi
-      </button>
-      <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600">
-        Annulla
-      </button>
+    <div className="flex flex-col gap-2 px-5 py-3 bg-gray-50 border-t border-gray-200">
+      <div className="flex gap-2 items-center">
+        <select
+          value={linkType}
+          onChange={(e) => setLinkType(e.target.value)}
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#E1251B] bg-white"
+        >
+          {LINK_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+          ))}
+        </select>
+        <input
+          autoFocus
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="Titolo link"
+        />
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="https://..."
+        />
+      </div>
+      <div className="flex gap-2 items-center">
+        {needsMedia && (
+          <input
+            value={mediaUrl}
+            onChange={(e) => setMediaUrl(e.target.value)}
+            className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+            placeholder={linkType === "youtube" ? "URL video YouTube" : "URL immagine"}
+          />
+        )}
+        <input
+          value={badge}
+          onChange={(e) => setBadge(e.target.value)}
+          className="w-28 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
+          placeholder="Badge"
+        />
+        <button
+          onClick={() => { if (label.trim()) onSave({ label, url, link_type: linkType, media_url: mediaUrl, badge }); }}
+          className="text-xs font-bold text-white bg-[#E1251B] px-3 py-1.5 rounded-lg hover:bg-[#C41E16]"
+        >
+          Aggiungi
+        </button>
+        <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600">
+          Annulla
+        </button>
+      </div>
     </div>
   );
 }

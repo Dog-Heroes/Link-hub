@@ -15,6 +15,7 @@ export default async function LinksPage() {
     order: number;
     enabled: number;
     link_type: string;
+    media_url: string | null;
     click_count: number;
   }[] = [];
 
@@ -42,6 +43,7 @@ export default async function LinksPage() {
       order: Number(r.order),
       enabled: Number(r.enabled),
       link_type: String(r.link_type),
+      media_url: r.media_url ? String(r.media_url) : null,
       click_count: Number(r.click_count),
     }));
   } catch {

@@ -9,14 +9,14 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { id, enabled, label, url, order } = body;
+  const { id, enabled, label, url, order, link_type, media_url, badge, icon } = body;
 
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
   const updates: string[] = [];
-  const args: (string | number)[] = [];
+  const args: (string | number | null)[] = [];
 
   if (enabled !== undefined) {
     updates.push("enabled = ?");
@@ -33,6 +33,22 @@ export async function PATCH(req: NextRequest) {
   if (order !== undefined) {
     updates.push('"order" = ?');
     args.push(order);
+  }
+  if (link_type !== undefined) {
+    updates.push("link_type = ?");
+    args.push(link_type);
+  }
+  if (media_url !== undefined) {
+    updates.push("media_url = ?");
+    args.push(media_url || null);
+  }
+  if (badge !== undefined) {
+    updates.push("badge = ?");
+    args.push(badge || null);
+  }
+  if (icon !== undefined) {
+    updates.push("icon = ?");
+    args.push(icon);
   }
 
   if (updates.length === 0) {
@@ -55,10 +71,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { id, section_id, label, url, icon, badge, order, link_type } = body;
+  const { id, section_id, label, url, icon, badge, order, link_type, media_url } = body;
 
   await db.execute({
-    sql: 'INSERT INTO links (id, section_id, label, url, icon, badge, "order", enabled, link_type) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)',
+    sql: 'INSERT INTO links (id, section_id, label, url, icon, badge, "order", enabled, link_type, media_url) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
     args: [
       id || crypto.randomUUID(),
       section_id,
@@ -68,6 +84,7 @@ export async function POST(req: NextRequest) {
       badge || null,
       order ?? 0,
       link_type || "link",
+      media_url || null,
     ],
   });
 
