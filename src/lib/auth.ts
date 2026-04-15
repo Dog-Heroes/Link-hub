@@ -2,13 +2,22 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
 /**
- * Allowed Google emails — only these can access /admin.
- * Add team members here or use a domain allowlist.
+ * Access control for /admin.
+ * ADMIN_ALLOWED_EMAILS: comma-separated emails or @domain patterns.
+ * Examples: "mario@dogheroes.com, @dogheroes.com"
  */
-const ALLOWED_EMAILS = (process.env.ADMIN_ALLOWED_EMAILS ?? "")
+const ALLOWED = (process.env.ADMIN_ALLOWED_EMAILS ?? "")
   .split(",")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
+
+function isEmailAllowed(email: string): boolean {
+  if (ALLOWED.length === 0) return true;
+  const lower = email.toLowerCase();
+  return ALLOWED.some((rule) =>
+    rule.startsWith("@") ? lower.endsWith(rule) : lower === rule
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -20,8 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     signIn({ profile }) {
       if (!profile?.email) return false;
-      if (ALLOWED_EMAILS.length === 0) return true; // no restriction if empty
-      return ALLOWED_EMAILS.includes(profile.email.toLowerCase());
+      return isEmailAllowed(profile.email);
     },
     session({ session }) {
       return session;

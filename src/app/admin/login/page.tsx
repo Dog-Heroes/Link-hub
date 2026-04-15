@@ -1,9 +1,15 @@
 import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await auth();
   if (session?.user) redirect("/admin");
+
+  const { error } = await searchParams;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -14,6 +20,14 @@ export default async function LoginPage() {
         <p className="text-sm text-gray-500 mb-6">
           Accedi con il tuo account Google aziendale
         </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {error === "AccessDenied"
+              ? "Accesso negato. Il tuo account non è autorizzato."
+              : "Si è verificato un errore. Riprova."}
+          </div>
+        )}
 
         <form
           action={async () => {
@@ -46,6 +60,10 @@ export default async function LoginPage() {
             Accedi con Google
           </button>
         </form>
+
+        <p className="text-xs text-gray-400 mt-6">
+          Solo gli account @dogheroes.it sono autorizzati
+        </p>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOutAction } from "@/lib/auth-actions";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
@@ -58,19 +59,25 @@ export default function AdminShell({ user, children }: AdminShellProps) {
 
         <div className="p-4 border-t border-gray-200">
           <p className="text-xs text-gray-500 truncate">{user.email}</p>
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="text-xs text-gray-400 hover:text-red-500 mt-1"
-            >
-              Esci
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 p-8 overflow-y-auto">{children}</main>
     </div>
+  );
+}
+
+function SignOutButton() {
+  return (
+    <form action={signOutAction}>
+      <button
+        type="submit"
+        className="text-xs text-gray-400 hover:text-red-500 mt-1"
+      >
+        Esci
+      </button>
+    </form>
   );
 }
