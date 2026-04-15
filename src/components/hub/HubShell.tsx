@@ -1,15 +1,59 @@
 import Image from "next/image";
 import TabBar from "./TabBar";
 import TrustpilotWidget from "./TrustpilotWidget";
+import { db } from "@/lib/db";
 
-export default function HubShell() {
+const ICON_MAP: Record<string, () => React.JSX.Element> = {
+  instagram: InstagramIcon,
+  tiktok: TikTokIcon,
+  youtube: YouTubeIcon,
+  linkedin: LinkedInIcon,
+  facebook: FacebookIcon,
+};
+
+async function getSocialLinks() {
+  try {
+    const result = await db.execute(
+      'SELECT platform, url FROM social_links WHERE enabled = 1 ORDER BY "order"'
+    );
+    return result.rows.map((r) => ({
+      platform: String(r.platform),
+      url: String(r.url),
+    }));
+  } catch {
+    // Fallback if DB not available
+    return [
+      { platform: "instagram", url: "https://instagram.com/dogheroes.it" },
+      { platform: "tiktok", url: "https://tiktok.com/@dogheroes.it" },
+      { platform: "youtube", url: "https://www.youtube.com/@dogheroes" },
+      { platform: "linkedin", url: "https://www.linkedin.com/company/dog-heroes/" },
+      { platform: "facebook", url: "https://www.facebook.com/dogheroes.it" },
+    ];
+  }
+}
+
+async function getSetting(key: string, fallback: string) {
+  try {
+    const result = await db.execute({
+      sql: "SELECT value FROM settings WHERE key = ?",
+      args: [key],
+    });
+    return result.rows[0] ? String(result.rows[0].value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export default async function HubShell() {
+  const [socialLinks, tagline] = await Promise.all([
+    getSocialLinks(),
+    getSetting("tagline", "L'azienda italiana del cibo fresco"),
+  ]);
+
   return (
     <div className="min-h-screen bg-[#e8e4de] flex items-start justify-center">
-      {/* Mobile-only container — max 430px, centered on desktop */}
       <div className="w-full max-w-[430px] min-h-screen bg-[#E1251B] relative overflow-x-hidden shadow-2xl">
-        {/* Hero header — bold, full-bleed */}
         <header className="relative bg-[#E1251B] px-6 pt-10 pb-4 text-center">
-
           {/* Logo */}
           <div className="relative mx-auto mb-4 w-[220px]">
             <Image
@@ -22,56 +66,33 @@ export default function HubShell() {
             />
           </div>
 
-          {/* Tagline — GT Pressura */}
+          {/* Tagline — from DB */}
           <p
             className="relative text-white text-[15px] leading-snug font-normal tracking-wide"
             style={{ fontFamily: "var(--font-brand)" }}
           >
-            L&apos;azienda italiana del cibo fresco
+            {tagline}
           </p>
 
-          {/* Social icons row */}
+          {/* Social icons — from DB */}
           <div className="relative flex justify-center gap-5 mt-5">
-            <SocialLink
-              href="https://instagram.com/dogheroes.it"
-              label="Instagram"
-            >
-              <InstagramIcon />
-            </SocialLink>
-            <SocialLink
-              href="https://tiktok.com/@dogheroes.it"
-              label="TikTok"
-            >
-              <TikTokIcon />
-            </SocialLink>
-            <SocialLink
-              href="https://www.youtube.com/@dogheroes"
-              label="YouTube"
-            >
-              <YouTubeIcon />
-            </SocialLink>
-            <SocialLink
-              href="https://www.linkedin.com/company/dog-heroes/"
-              label="LinkedIn"
-            >
-              <LinkedInIcon />
-            </SocialLink>
-            <SocialLink
-              href="https://www.facebook.com/dogheroes.it"
-              label="Facebook"
-            >
-              <FacebookIcon />
-            </SocialLink>
+            {socialLinks.map((social) => {
+              const IconComponent = ICON_MAP[social.platform];
+              if (!IconComponent) return null;
+              return (
+                <SocialLink key={social.platform} href={social.url} label={social.platform}>
+                  <IconComponent />
+                </SocialLink>
+              );
+            })}
           </div>
 
-          {/* Trustpilot — always visible */}
+          {/* Trustpilot */}
           <div className="relative mt-4">
             <TrustpilotWidget />
           </div>
-
         </header>
 
-        {/* Tab pills on red + content in white rounded box */}
         <TabBar />
       </div>
     </div>
@@ -93,11 +114,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="
-        flex items-center justify-center text-white
-        hover:opacity-70 active:scale-95
-        transition-all
-      "
+      className="flex items-center justify-center text-white hover:opacity-70 active:scale-95 transition-all"
     >
       {children}
     </a>
