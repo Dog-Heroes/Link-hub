@@ -81,11 +81,34 @@ export async function migrate() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    -- Store locator
+    CREATE TABLE IF NOT EXISTS stores (
+      id            TEXT PRIMARY KEY,
+      name          TEXT NOT NULL,
+      type          TEXT NOT NULL DEFAULT 'rivenditore',
+      chain         TEXT NOT NULL DEFAULT '',
+      address       TEXT NOT NULL DEFAULT '',
+      city          TEXT NOT NULL DEFAULT '',
+      zip           TEXT NOT NULL DEFAULT '',
+      region        TEXT NOT NULL DEFAULT '',
+      lat           REAL NOT NULL DEFAULT 0,
+      lng           REAL NOT NULL DEFAULT 0,
+      phone         TEXT NOT NULL DEFAULT '',
+      email         TEXT NOT NULL DEFAULT '',
+      website       TEXT NOT NULL DEFAULT '',
+      opening_hours TEXT NOT NULL DEFAULT '{}',
+      tags          TEXT NOT NULL DEFAULT '[]',
+      icon          TEXT NOT NULL DEFAULT '',
+      enabled       INTEGER NOT NULL DEFAULT 1
+    );
+
     -- Index for analytics queries
     CREATE INDEX IF NOT EXISTS idx_events_link_id ON events(link_id);
     CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
     CREATE INDEX IF NOT EXISTS idx_links_section_id ON links(section_id);
     CREATE INDEX IF NOT EXISTS idx_sections_tab_id ON sections(tab_id);
     CREATE INDEX IF NOT EXISTS idx_quiz_options_field ON quiz_options(field);
+    CREATE INDEX IF NOT EXISTS idx_stores_chain ON stores(chain);
+    CREATE INDEX IF NOT EXISTS idx_stores_enabled ON stores(enabled);
   `);
 }
