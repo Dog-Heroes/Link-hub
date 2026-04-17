@@ -612,7 +612,7 @@ export default function StoresManager({ initial }: { initial: Store[] }) {
     URL.revokeObjectURL(url);
   }, [stores]);
 
-  // ── import JSON/CSV ────────────────────────────────────────────────────────
+  // ── import CSV/JSON + auto-sync ────────────────────────────────────────────
   const handleImportFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -627,15 +627,24 @@ export default function StoresManager({ initial }: { initial: Store[] }) {
       }
 
       setSaving(true);
-      setStatus("Importazione in corso…");
+      setStatus(`Caricamento ${data.length} negozi in corso…`);
       try {
+        // Step 1: import into DB
         const res = await apiPost("/api/admin/stores/import", data);
-        setStatus(`Importati ${res.imported} negozi.`);
-        // Reload from server
+        setStatus(`Importati ${res.imported} negozi. Sincronizzazione Shopify in corso…`);
+
+        // Step 2: reload list
         const fresh = await fetch("/api/admin/stores");
         if (fresh.ok) setStores(await fresh.json());
+
+        // Step 3: auto-sync to Shopify
+        const syncRes = await fetch("/api/admin/stores/sync", { method: "POST" });
+        const syncData = await syncRes.json();
+        if (!syncRes.ok) throw new Error(syncData.error || "Sync Shopify fallito");
+
+        setStatus(`Fatto! ${res.imported} negozi nel database, ${syncData.pushed} pushati su Shopify.`);
       } catch (err) {
-        setStatus(`Errore importazione: ${err instanceof Error ? err.message : String(err)}`);
+        setStatus(`Errore: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setSaving(false);
         if (importRef.current) importRef.current.value = "";
@@ -736,15 +745,11 @@ export default function StoresManager({ initial }: { initial: Store[] }) {
           + Aggiungi negozio
         </button>
 
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+        <label
+          className={`px-4 py-2 text-sm font-bold border-2 border-[#E1251B] rounded-lg text-[#E1251B] hover:bg-red-50 cursor-pointer flex items-center gap-2 ${saving ? "opacity-50 pointer-events-none" : ""}`}
+          title="Carica un CSV con i dati negozi: aggiorna il database e sincronizza Shopify in automatico"
         >
-          Esporta CSV
-        </button>
-
-        <label className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer">
-          Importa JSON/CSV
+          ⬆️ Carica CSV → aggiorna tutto
           <input
             ref={importRef}
             type="file"
@@ -755,19 +760,29 @@ export default function StoresManager({ initial }: { initial: Store[] }) {
         </label>
 
         <button
-          onClick={handleSeed}
-          disabled={saving}
-          className="px-4 py-2 text-sm font-semibold border border-orange-200 rounded-lg text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+          onClick={handleExport}
+          className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+          title="Scarica il CSV attuale con tutti i negozi"
         >
-          Seed da JSON
+          ⬇️ Scarica CSV
         </button>
 
         <button
           onClick={handleSyncShopify}
           disabled={saving}
           className="px-4 py-2 text-sm font-semibold border border-green-200 rounded-lg text-green-700 hover:bg-green-50 disabled:opacity-50"
+          title="Pusha i dati attuali dal database a Shopify senza importare un nuovo file"
         >
           🔄 Sync → Shopify
+        </button>
+
+        <button
+          onClick={handleSeed}
+          disabled={saving}
+          className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 disabled:opacity-50 text-xs"
+          title="Solo la prima volta: carica i 536 negozi dal JSON statico nel database"
+        >
+          Popola DB (prima volta)
         </button>
       </div>
 
