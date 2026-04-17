@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/tabs", label: "Tab", icon: "📑" },
   { href: "/admin/social", label: "Social", icon: "💬" },
   { href: "/admin/quiz", label: "Quiz", icon: "🐕" },
+  { href: "/admin/stores", label: "Negozi", icon: "📍" },
   { href: "/admin/settings", label: "Impostazioni", icon: "⚙️" },
 ];
 
