@@ -1,0 +1,15 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  secrets:
+    uses: Dog-Heroes/ci-workflows/.github/workflows/secret-scan.yml@main
+  node:
+    uses: Dog-Heroes/ci-workflows/.github/workflows/node-ci.yml@main
+    with:
+      node-version: "22"
+      # lint escluso finche' i 4 errori preesistenti di eslint non sono sistemati
+      scripts: "build"
