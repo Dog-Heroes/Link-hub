@@ -531,7 +531,7 @@ export default function StoreLocatorTab() {
   useEffect(() => {
     if (!showMap || mapsLoaded || !GOOGLE_MAPS_API_KEY) return;
     if (window.google?.maps) {
-      setMapsLoaded(true);
+      queueMicrotask(() => setMapsLoaded(true));
       return;
     }
     const script = document.createElement("script");

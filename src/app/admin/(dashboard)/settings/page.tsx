@@ -4,7 +4,7 @@ import SettingsForm from "@/components/admin/SettingsForm";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  let settings: Record<string, string> = {};
+  const settings: Record<string, string> = {};
 
   try {
     const result = await db.execute("SELECT key, value FROM settings");

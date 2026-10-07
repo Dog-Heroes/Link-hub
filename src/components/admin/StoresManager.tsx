@@ -422,7 +422,7 @@ function StoreForm({
       {/* Opening hours */}
       <div>
         <label className="block text-xs font-semibold text-gray-500 mb-2">
-          Orari (formato HH:MM-HH:MM o "closed")
+          Orari (formato HH:MM-HH:MM o &quot;closed&quot;)
         </label>
         <div className="grid grid-cols-7 gap-2">
           {DAYS.map(({ key, label }) => (
