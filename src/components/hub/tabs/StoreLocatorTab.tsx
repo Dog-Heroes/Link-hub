@@ -23,6 +23,7 @@ interface StoreLocation {
   opening_hours: Record<string, string>;
   tags: string[];
   icon: string;
+  brands?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -47,6 +48,7 @@ const PRODUCT_IMAGES: Record<string, string> = {
 
 const RADIUS_OPTIONS = [25, 50, 75, 100];
 const MAX_RESULTS = 20;
+const STORE_LOCATOR_URL = "https://www.dogheroes.it/pages/punti-vendita";
 
 /* ------------------------------------------------------------------ */
 /*  Haversine distance (km)                                            */
@@ -505,6 +507,7 @@ export default function StoreLocatorTab() {
   const [query, setQuery] = useState("");
   const [radius, setRadius] = useState(50);
   const [activeChains, setActiveChains] = useState<Set<string>>(new Set());
+  const [catOnly, setCatOnly] = useState(false);
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -541,6 +544,12 @@ export default function StoreLocatorTab() {
     document.head.appendChild(script);
   }, [showMap, mapsLoaded]);
 
+  // Some stores (independents) also carry cat food — exposed via "brands"
+  const hasCatStores = useMemo(
+    () => allStores.some((s) => s.brands?.includes("cat")),
+    [allStores]
+  );
+
   // Get unique chains from data
   const chains = useMemo(() => {
     const chainMap = new Map<string, string>();
@@ -561,6 +570,11 @@ export default function StoreLocatorTab() {
       result = result.filter((s) => activeChains.has(s.chain));
     }
 
+    // Cat food filter
+    if (catOnly) {
+      result = result.filter((s) => s.brands?.includes("cat"));
+    }
+
     // Distance filter if we have a center
     if (center) {
       result = result
@@ -573,12 +587,15 @@ export default function StoreLocatorTab() {
     }
 
     return result.slice(0, MAX_RESULTS);
-  }, [allStores, activeChains, center, radius]);
+  }, [allStores, activeChains, catOnly, center, radius]);
 
   const totalCount = useMemo(() => {
     let result = allStores;
     if (activeChains.size > 0) {
       result = result.filter((s) => activeChains.has(s.chain));
+    }
+    if (catOnly) {
+      result = result.filter((s) => s.brands?.includes("cat"));
     }
     if (center) {
       result = result.filter(
@@ -586,7 +603,7 @@ export default function StoreLocatorTab() {
       );
     }
     return result.length;
-  }, [allStores, activeChains, center, radius]);
+  }, [allStores, activeChains, catOnly, center, radius]);
 
   // Geocode search
   const handleSearch = useCallback(
@@ -726,7 +743,7 @@ export default function StoreLocatorTab() {
       )}
 
       {/* Chain filter pills — wrap on 2 rows */}
-      {chains.length > 0 && (
+      {(chains.length > 0 || hasCatStores) && (
         <div className="flex flex-wrap gap-1.5 pb-3">
           {chains.map((c) => (
             <ChainPill
@@ -737,6 +754,22 @@ export default function StoreLocatorTab() {
               onToggle={() => toggleChain(c.name)}
             />
           ))}
+          {hasCatStores && (
+            <button
+              onClick={() => setCatOnly((v) => !v)}
+              className={`
+                flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
+                text-[10px] font-bold whitespace-nowrap
+                border-[1.5px] transition-all min-h-[30px]
+                ${catOnly
+                  ? "shadow-sm bg-white border-[#002B49] text-[#002B49]"
+                  : "border-[#002B49]/8 opacity-60 bg-transparent text-[#002B49]/60"
+                }
+              `}
+            >
+              🐱 Anche gatto
+            </button>
+          )}
         </div>
       )}
 
@@ -844,6 +877,21 @@ export default function StoreLocatorTab() {
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Link to the full store locator on dogheroes.it */}
+      {!loading && (
+        <div className="text-center mt-4">
+          <a
+            href={STORE_LOCATOR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackEvent("store_locator_full_list_click")}
+            className="text-[12px] font-bold text-[#E1251B] underline underline-offset-2"
+          >
+            Vedi tutti i punti vendita →
+          </a>
         </div>
       )}
     </div>
