@@ -15,6 +15,7 @@
 import { getQuizOptions, type QuizOptions } from "../src/lib/quiz-options";
 import { buildBridgeUrl, isQuizValid, approximateBirthday } from "../src/components/quiz/steps/PlanStep";
 import type { DogData, HealthData } from "../src/components/quiz/QuizContext";
+import { appendUTM, getFixedUTM } from "../src/lib/utm";
 
 let failures = 0;
 
@@ -118,6 +119,30 @@ async function main() {
     Number.isFinite(weight) && weight >= options.weight.min && weight <= options.weight.max,
     "weight is within the live site's own min/max"
   );
+
+  // The quiz bridge link (PlanStep.tsx) always stamps the hub's fixed
+  // UTM — utm_source=linktree&utm_medium=bio, never overridden by whatever
+  // UTM the hub URL itself was opened with.
+  const noIncomingParams = new URLSearchParams();
+  const urlWithUtm = appendUTM(url, getFixedUTM(noIncomingParams));
+  const utmParams = new URL(urlWithUtm).searchParams;
+  assert(utmParams.get("utm_source") === "linktree", "bridge URL carries utm_source=linktree");
+  assert(utmParams.get("utm_medium") === "bio", "bridge URL carries utm_medium=bio");
+  assert(utmParams.get("utm_campaign") === null, "no ?s= on the hub URL -> no utm_campaign at all");
+
+  // ?s=ig / ?s=tt on the hub URL map to a campaign; any incoming
+  // utm_source/utm_medium/utm_campaign is ignored (the fixed ones always win).
+  const igParams = new URLSearchParams("s=ig&utm_source=newsletter&utm_medium=email&utm_campaign=whatever");
+  const igUtm = getFixedUTM(igParams);
+  assert(igUtm.utm_source === "linktree", "incoming utm_source never overrides the fixed one");
+  assert(igUtm.utm_medium === "bio", "incoming utm_medium never overrides the fixed one");
+  assert(igUtm.utm_campaign === "instagram", "?s=ig on the hub URL maps to utm_campaign=instagram");
+
+  const ttUtm = getFixedUTM(new URLSearchParams("s=tt"));
+  assert(ttUtm.utm_campaign === "tiktok", "?s=tt on the hub URL maps to utm_campaign=tiktok");
+
+  const unknownSUtm = getFixedUTM(new URLSearchParams("s=fb"));
+  assert(unknownSUtm.utm_campaign === undefined, "an unmapped ?s= value sets no utm_campaign");
 
   // A dog missing a required field (no breed selected) must stay invalid.
   assert(!isQuizValid({ ...dog, breed: "" }, health, options), "quiz without a breed is rejected by isQuizValid");

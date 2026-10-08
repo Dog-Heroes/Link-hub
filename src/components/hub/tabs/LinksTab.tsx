@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUTM } from "@/hooks/useUTM";
-import { appendUTM } from "@/lib/utm";
+import { appendUTM, isSiteUrl } from "@/lib/utm";
 import { trackEvent } from "@/lib/analytics";
 import type { SectionData, LinkData } from "../HubShell";
 
@@ -70,7 +70,9 @@ function HeroCTAButton({
 
   if (!heroLink) return null;
 
-  const href = appendUTM(heroLink.url, utm);
+  // Same rule as the regular link cards: only tag links that point back
+  // at the Dog Heroes site, never an external domain.
+  const href = isSiteUrl(heroLink.url) ? appendUTM(heroLink.url, utm) : heroLink.url;
 
   function handleClick() {
     trackEvent("link_hub_click", {
@@ -187,7 +189,9 @@ function LinkCard({
   link: LinkData;
   utm: Record<string, string | undefined>;
 }) {
-  const href = appendUTM(link.url, utm);
+  // External platforms (social, YouTube, Trustpilot, Notion, Empathy…) never
+  // get the hub's UTM — only links back to the Dog Heroes site do.
+  const href = isSiteUrl(link.url) ? appendUTM(link.url, utm) : link.url;
 
   function handleClick() {
     trackEvent("link_hub_click", {

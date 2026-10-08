@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { useUTM } from "@/hooks/useUTM";
+import { appendUTM } from "@/lib/utm";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -499,6 +501,7 @@ function MiniMap({
 /* ------------------------------------------------------------------ */
 
 export default function StoreLocatorTab() {
+  const utm = useUTM();
   const [allStores, setAllStores] = useState<StoreLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -884,7 +887,7 @@ export default function StoreLocatorTab() {
       {!loading && (
         <div className="text-center mt-4">
           <a
-            href={STORE_LOCATOR_URL}
+            href={appendUTM(STORE_LOCATOR_URL, utm)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("store_locator_full_list_click")}
