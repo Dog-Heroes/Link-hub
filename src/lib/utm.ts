@@ -2,8 +2,16 @@ export type UTMParams = Partial<
   Record<"utm_source" | "utm_medium" | "utm_campaign" | "utm_term" | "utm_content", string>
 >;
 
-/** Fixed attribution the hub always stamps on its own outbound links. */
-const FIXED_SOURCE = "linktree";
+/**
+ * Fixed attribution the hub always stamps on its own outbound links.
+ * The Cat Heroes page (`/cat`) gets its own utm_source ("linktree_cat") so
+ * its traffic is distinguishable from the dog hub ("linktree") — see
+ * AGENTS.md / decisione Marco (A).
+ */
+const FIXED_SOURCE_BY_BRAND: Record<string, string> = {
+  dog: "linktree",
+  cat: "linktree_cat",
+};
 const FIXED_MEDIUM = "bio";
 
 /**
@@ -25,19 +33,21 @@ const CAMPAIGN_BY_SOURCE: Record<string, string> = {
  * campaign at all (an incoming utm_campaign is ignored too). Any other
  * incoming UTM (utm_term, utm_content) passes through unchanged.
  */
-export function getUTMFromURL(): UTMParams {
+export function getUTMFromURL(brand: string = "dog"): UTMParams {
   if (typeof window === "undefined") return {};
-  return getFixedUTM(new URLSearchParams(window.location.search));
+  return getFixedUTM(new URLSearchParams(window.location.search), brand);
 }
 
 /**
  * Same as {@link getUTMFromURL} but takes `URLSearchParams` directly —
  * exported so it can be exercised from a plain Node script (no `window`),
- * e.g. scripts/test-bridge-url.ts.
+ * e.g. scripts/test-bridge-url.ts. `brand` selects the fixed utm_source
+ * ("linktree" for dog, "linktree_cat" for cat — see
+ * {@link FIXED_SOURCE_BY_BRAND}).
  */
-export function getFixedUTM(params: URLSearchParams): UTMParams {
+export function getFixedUTM(params: URLSearchParams, brand: string = "dog"): UTMParams {
   const utm: UTMParams = {
-    utm_source: FIXED_SOURCE,
+    utm_source: FIXED_SOURCE_BY_BRAND[brand] ?? FIXED_SOURCE_BY_BRAND.dog,
     utm_medium: FIXED_MEDIUM,
   };
 

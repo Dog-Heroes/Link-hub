@@ -6,11 +6,19 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, tab_id, label, order, collapsed, type } = await req.json();
+  const { id, tab_id, label, order, collapsed, type, brand } = await req.json();
 
   await db.execute({
-    sql: 'INSERT INTO sections (id, tab_id, label, "order", collapsed, type) VALUES (?, ?, ?, ?, ?, ?)',
-    args: [id || crypto.randomUUID(), tab_id || "links", label, order ?? 0, collapsed ? 1 : 0, type || "links"],
+    sql: 'INSERT INTO sections (id, tab_id, label, "order", collapsed, type, brand) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id || crypto.randomUUID(),
+      tab_id || "links",
+      label,
+      order ?? 0,
+      collapsed ? 1 : 0,
+      type || "links",
+      brand === "cat" ? "cat" : "dog",
+    ],
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });

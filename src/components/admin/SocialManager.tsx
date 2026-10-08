@@ -20,7 +20,7 @@ async function api(method: string, body: object) {
   });
 }
 
-export default function SocialManager({ initial }: { initial: SocialLink[] }) {
+export default function SocialManager({ initial, brand = "dog" }: { initial: SocialLink[]; brand?: string }) {
   const [socials, setSocials] = useState(initial);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -46,8 +46,8 @@ export default function SocialManager({ initial }: { initial: SocialLink[] }) {
     const order = socials.length;
     setSocials((prev) => [...prev, { id, platform, url, order, enabled: 1 }]);
     setAdding(false);
-    await api("POST", { id, platform, url, order });
-  }, [socials]);
+    await api("POST", { id, platform, url, order, brand });
+  }, [socials, brand]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

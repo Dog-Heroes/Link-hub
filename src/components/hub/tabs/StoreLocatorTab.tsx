@@ -155,7 +155,7 @@ async function geocode(query: string): Promise<{ lat: number; lng: number } | nu
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#002B49]/8 p-4 animate-pulse">
+    <div className="bg-[var(--brand-color-card-bg)] rounded-[var(--brand-radius)] border-2 border-[var(--brand-color-text)]/8 p-4 animate-pulse">
       <div className="flex justify-between items-start">
         <div className="space-y-2 flex-1">
           <div className="h-2 bg-gray-200 rounded w-1/3" />
@@ -177,22 +177,24 @@ function StoreCard({
   store,
   onSelect,
   isActive,
+  brand,
 }: {
   store: StoreLocation & { _distance?: number };
   onSelect: () => void;
   isActive: boolean;
+  brand: string;
 }) {
   const status = getOpenStatus(store.opening_hours);
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-  const chainColor = CHAIN_COLORS[store.chain] || "#002B49";
+  const chainColor = CHAIN_COLORS[store.chain] || "var(--brand-color-text)";
 
   return (
     <div
       onClick={onSelect}
       className={`
-        rounded-2xl overflow-hidden transition-all cursor-pointer
+        rounded-[var(--brand-radius)] overflow-hidden transition-all cursor-pointer
         ${isActive
-          ? "shadow-lg ring-2 ring-[#E1251B]/30"
+          ? "shadow-lg ring-2 ring-[var(--brand-color-accent)]/30"
           : "shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md"
         }
       `}
@@ -200,7 +202,7 @@ function StoreCard({
       {/* Color accent bar */}
       <div className="h-[3px]" style={{ background: chainColor }} />
 
-      <div className="bg-white p-3.5">
+      <div className="bg-[var(--brand-color-card-bg)] p-3.5">
         {/* Header: chain + logo */}
         <div className="flex justify-between items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -212,10 +214,10 @@ function StoreCard({
                 {store.chain}
               </p>
             )}
-            <h3 className="text-[14px] font-bold text-[#002B49] leading-snug">
+            <h3 className="text-[14px] font-bold text-[var(--brand-color-text)] leading-snug">
               {store.name}
             </h3>
-            <p className="text-[12px] text-[#002B49]/45 mt-0.5 leading-tight">
+            <p className="text-[12px] text-[var(--brand-color-text)]/45 mt-0.5 leading-tight">
               {[store.address, [store.zip, store.city].filter(Boolean).join(" ")]
                 .filter(Boolean)
                 .join(", ")}
@@ -225,7 +227,7 @@ function StoreCard({
             <img
               src={store.icon}
               alt={store.chain}
-              className="w-9 h-9 object-contain flex-shrink-0 rounded-lg border border-[#002B49]/8 p-0.5"
+              className="w-9 h-9 object-contain flex-shrink-0 rounded-lg border border-[var(--brand-color-text)]/8 p-0.5"
               loading="lazy"
             />
           )}
@@ -250,7 +252,7 @@ function StoreCard({
             </div>
           ) : <span />}
           {store._distance != null && (
-            <span className="text-[11px] font-medium text-[#002B49]/35 tabular-nums">
+            <span className="text-[11px] font-medium text-[var(--brand-color-text)]/35 tabular-nums">
               {store._distance < 1
                 ? `${Math.round(store._distance * 1000)} m`
                 : `${store._distance.toFixed(1)} km`}
@@ -260,8 +262,8 @@ function StoreCard({
 
         {/* Tags — horizontal with images */}
         {store.tags?.length > 0 && (
-          <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-[#002B49]/6">
-            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#002B49]/30">
+          <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-[var(--brand-color-text)]/6">
+            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-color-text)]/30">
               Assortimento
             </span>
             <div className="flex gap-2">
@@ -275,7 +277,7 @@ function StoreCard({
                       loading="lazy"
                     />
                   )}
-                  <span className="text-[8px] text-[#002B49]/40 uppercase font-bold tracking-wide">
+                  <span className="text-[8px] text-[var(--brand-color-text)]/40 uppercase font-bold tracking-wide">
                     {tag}
                   </span>
                 </div>
@@ -292,11 +294,11 @@ function StoreCard({
             rel="noopener noreferrer"
             onClick={(e) => {
               e.stopPropagation();
-              trackEvent("store_directions_click", { store_id: store.id, chain: store.chain });
+              trackEvent("store_directions_click", { store_id: store.id, chain: store.chain }, brand);
             }}
             className="
               flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl
-              bg-[#002B49] text-white text-[12px] font-bold
+              bg-[var(--brand-color-text)] text-[var(--brand-color-button-text)] text-[12px] font-bold
               active:scale-[0.97] transition-all min-h-[40px]
             "
           >
@@ -310,11 +312,11 @@ function StoreCard({
               href={`tel:${store.phone}`}
               onClick={(e) => {
                 e.stopPropagation();
-                trackEvent("store_call_click", { store_id: store.id, chain: store.chain });
+                trackEvent("store_call_click", { store_id: store.id, chain: store.chain }, brand);
               }}
               className="
                 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
-                border-2 border-[#002B49]/12 text-[#002B49] text-[12px] font-bold
+                border-2 border-[var(--brand-color-text)]/12 text-[var(--brand-color-text)] text-[12px] font-bold
                 active:scale-[0.97] transition-all min-h-[40px]
               "
             >
@@ -348,8 +350,8 @@ function HoursTable({ hours }: { hours: Record<string, string> }) {
   const todayKey = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
 
   return (
-    <div className="mt-3 pt-3 border-t border-[#002B49]/8">
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#002B49]/40 mb-1.5">
+    <div className="mt-3 pt-3 border-t border-[var(--brand-color-text)]/8">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-color-text)]/40 mb-1.5">
         Orari di apertura
       </p>
       <div className="space-y-0.5">
@@ -361,7 +363,7 @@ function HoursTable({ hours }: { hours: Record<string, string> }) {
             <div
               key={key}
               className={`flex justify-between text-[11px] py-0.5 px-1 rounded ${
-                isToday ? "bg-[#002B49]/5 font-bold text-[#002B49]" : "text-[#002B49]/60"
+                isToday ? "bg-[var(--brand-color-text)]/5 font-bold text-[var(--brand-color-text)]" : "text-[var(--brand-color-text)]/60"
               }`}
             >
               <span>{dayLabels[key]}</span>
@@ -398,8 +400,8 @@ function ChainPill({
         text-[10px] font-bold whitespace-nowrap
         border-[1.5px] transition-all min-h-[30px]
         ${active
-          ? "shadow-sm bg-white"
-          : "border-[#002B49]/8 opacity-35 bg-transparent"
+          ? "shadow-sm bg-[var(--brand-color-card-bg)]"
+          : "border-[var(--brand-color-text)]/8 opacity-35 bg-transparent"
         }
       `}
       style={active ? { color, borderColor: color, background: `${color}10` } : undefined}
@@ -491,7 +493,7 @@ function MiniMap({
   return (
     <div
       ref={mapRef}
-      className="w-full h-[250px] rounded-2xl overflow-hidden bg-gray-100"
+      className="w-full h-[250px] rounded-[var(--brand-radius)] overflow-hidden bg-gray-100"
     />
   );
 }
@@ -500,8 +502,13 @@ function MiniMap({
 /*  Main StoreLocatorTab                                               */
 /* ------------------------------------------------------------------ */
 
-export default function StoreLocatorTab() {
-  const utm = useUTM();
+export default function StoreLocatorTab({ brand = "dog" }: { brand?: string }) {
+  const utm = useUTM(brand);
+  // On /cat (brand="cat") the store locator is forced to cat-carrying stores
+  // and the "Anche gatto" toggle is hidden — see decisione Marco (A) in
+  // AGENTS.md. On /hub it stays exactly as before (toggle visible, off by
+  // default).
+  const forceCat = brand === "cat";
   const [allStores, setAllStores] = useState<StoreLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -510,7 +517,7 @@ export default function StoreLocatorTab() {
   const [query, setQuery] = useState("");
   const [radius, setRadius] = useState(50);
   const [activeChains, setActiveChains] = useState<Set<string>>(new Set());
-  const [catOnly, setCatOnly] = useState(false);
+  const [catOnly, setCatOnly] = useState(forceCat);
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -553,16 +560,18 @@ export default function StoreLocatorTab() {
     [allStores]
   );
 
-  // Get unique chains from data
+  // Get unique chains from data — on /cat (forceCat) only from stores that
+  // actually carry cat food, so the pills never list a dog-only chain.
   const chains = useMemo(() => {
     const chainMap = new Map<string, string>();
-    allStores.forEach((s) => {
+    const source = forceCat ? allStores.filter((s) => s.brands?.includes("cat")) : allStores;
+    source.forEach((s) => {
       if (s.chain && !chainMap.has(s.chain)) {
         chainMap.set(s.chain, s.icon || "");
       }
     });
     return Array.from(chainMap.entries()).map(([name, icon]) => ({ name, icon }));
-  }, [allStores]);
+  }, [allStores, forceCat]);
 
   // Filtered & sorted stores
   const filteredStores = useMemo(() => {
@@ -623,11 +632,11 @@ export default function StoreLocatorTab() {
         const coords = await geocode(value);
         if (coords) {
           setCenter(coords);
-          trackEvent("store_search", { query: value });
+          trackEvent("store_search", { query: value }, brand);
         }
       }, 600);
     },
-    []
+    [brand]
   );
 
   // Geolocation
@@ -639,12 +648,12 @@ export default function StoreLocatorTab() {
         setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setQuery("");
         setGeoLoading(false);
-        trackEvent("store_geolocate");
+        trackEvent("store_geolocate", undefined, brand);
       },
       () => setGeoLoading(false),
       { timeout: 10000 }
     );
-  }, []);
+  }, [brand]);
 
   // Toggle chain filter
   const toggleChain = useCallback((chain: string) => {
@@ -668,7 +677,7 @@ export default function StoreLocatorTab() {
   return (
     <div className="px-4 pt-5 pb-4">
       {/* Section header */}
-      <p className="text-[12px] font-extrabold uppercase tracking-[0.15em] text-[#002B49]/40 mb-3">
+      <p className="text-[12px] font-extrabold uppercase tracking-[0.15em] text-[var(--brand-color-text)]/40 mb-3">
         Trova il punto vendita
       </p>
 
@@ -676,7 +685,7 @@ export default function StoreLocatorTab() {
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#002B49]/30"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--brand-color-text)]/30"
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -694,10 +703,10 @@ export default function StoreLocatorTab() {
             placeholder="Cerca per citta o indirizzo..."
             className="
               w-full pl-9 pr-3 py-2.5 rounded-xl
-              border-2 border-[#002B49]/10
-              text-[13px] text-[#002B49]
-              placeholder:text-[#002B49]/30
-              focus:outline-none focus:border-[#E1251B]/40
+              border-2 border-[var(--brand-color-text)]/10
+              text-[13px] text-[var(--brand-color-text)]
+              placeholder:text-[var(--brand-color-text)]/30
+              focus:outline-none focus:border-[var(--brand-color-accent)]/40
               transition-colors min-h-[44px]
             "
           />
@@ -707,14 +716,14 @@ export default function StoreLocatorTab() {
           disabled={geoLoading}
           className="
             flex items-center justify-center w-[44px] h-[44px]
-            rounded-xl border-2 border-[#002B49]/10
-            text-[#002B49]/60 hover:border-[#002B49]/20
+            rounded-xl border-2 border-[var(--brand-color-text)]/10
+            text-[var(--brand-color-text)]/60 hover:border-[var(--brand-color-text)]/20
             active:scale-[0.95] transition-all flex-shrink-0
           "
           title="Usa la mia posizione"
         >
           {geoLoading ? (
-            <div className="w-4 h-4 border-2 border-[#002B49]/20 border-t-[#E1251B] rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-[var(--brand-color-text)]/20 border-t-[var(--brand-color-accent)] rounded-full animate-spin" />
           ) : (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
@@ -734,8 +743,8 @@ export default function StoreLocatorTab() {
                 px-3 py-1 rounded-full text-[11px] font-bold
                 border transition-all min-h-[28px]
                 ${radius === r
-                  ? "bg-[#E1251B] text-white border-[#E1251B]"
-                  : "bg-white text-[#002B49]/50 border-[#002B49]/10"
+                  ? "bg-[var(--brand-color-accent)] text-[var(--brand-color-button-text)] border-[var(--brand-color-accent)]"
+                  : "bg-[var(--brand-color-card-bg)] text-[var(--brand-color-text)]/50 border-[var(--brand-color-text)]/10"
                 }
               `}
             >
@@ -746,7 +755,7 @@ export default function StoreLocatorTab() {
       )}
 
       {/* Chain filter pills — wrap on 2 rows */}
-      {(chains.length > 0 || hasCatStores) && (
+      {(chains.length > 0 || (hasCatStores && !forceCat)) && (
         <div className="flex flex-wrap gap-1.5 pb-3">
           {chains.map((c) => (
             <ChainPill
@@ -757,7 +766,7 @@ export default function StoreLocatorTab() {
               onToggle={() => toggleChain(c.name)}
             />
           ))}
-          {hasCatStores && (
+          {hasCatStores && !forceCat && (
             <button
               onClick={() => setCatOnly((v) => !v)}
               className={`
@@ -765,8 +774,8 @@ export default function StoreLocatorTab() {
                 text-[10px] font-bold whitespace-nowrap
                 border-[1.5px] transition-all min-h-[30px]
                 ${catOnly
-                  ? "shadow-sm bg-white border-[#002B49] text-[#002B49]"
-                  : "border-[#002B49]/8 opacity-60 bg-transparent text-[#002B49]/60"
+                  ? "shadow-sm bg-[var(--brand-color-card-bg)] border-[var(--brand-color-text)] text-[var(--brand-color-text)]"
+                  : "border-[var(--brand-color-text)]/8 opacity-60 bg-transparent text-[var(--brand-color-text)]/60"
                 }
               `}
             >
@@ -783,10 +792,10 @@ export default function StoreLocatorTab() {
             onClick={() => setShowMap(!showMap)}
             className="
               flex items-center gap-1.5 text-[12px] font-bold
-              text-[#002B49]/50 mb-2 min-h-[32px]
+              text-[var(--brand-color-text)]/50 mb-2 min-h-[32px]
             "
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#E1251B]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[var(--brand-color-accent)]">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z" />
             </svg>
             {showMap ? "Nascondi mappa" : "Mostra mappa"}
@@ -813,7 +822,7 @@ export default function StoreLocatorTab() {
 
       {/* Results count */}
       {!loading && !error && (
-        <p className="text-[11px] text-[#002B49]/40 mb-2">
+        <p className="text-[11px] text-[var(--brand-color-text)]/40 mb-2">
           {totalCount > MAX_RESULTS
             ? `${totalCount} punti vendita — ${filteredStores.length} visualizzati`
             : `${filteredStores.length} ${filteredStores.length === 1 ? "punto vendita" : "punti vendita"}`}
@@ -835,7 +844,7 @@ export default function StoreLocatorTab() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-3 text-[14px] font-bold text-[#E1251B] min-h-[44px]"
+            className="mt-3 text-[14px] font-bold text-[var(--brand-color-accent)] min-h-[44px]"
           >
             Riprova
           </button>
@@ -846,7 +855,7 @@ export default function StoreLocatorTab() {
       {!loading && !error && filteredStores.length === 0 && (
         <div className="text-center py-8">
           <svg
-            className="mx-auto mb-3 text-[#002B49]/15"
+            className="mx-auto mb-3 text-[var(--brand-color-text)]/15"
             width="48"
             height="48"
             viewBox="0 0 24 24"
@@ -857,10 +866,10 @@ export default function StoreLocatorTab() {
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             <circle cx="12" cy="9" r="2.5" />
           </svg>
-          <p className="text-[14px] text-[#002B49]/40">
+          <p className="text-[14px] text-[var(--brand-color-text)]/40">
             Nessun punto vendita trovato
           </p>
-          <p className="text-[12px] text-[#002B49]/30 mt-1">
+          <p className="text-[12px] text-[var(--brand-color-text)]/30 mt-1">
             Prova ad ampliare il raggio di ricerca
           </p>
         </div>
@@ -877,6 +886,7 @@ export default function StoreLocatorTab() {
                 onSelect={() =>
                   setActiveId(activeId === store.id ? null : store.id)
                 }
+                brand={brand}
               />
             </div>
           ))}
@@ -890,8 +900,8 @@ export default function StoreLocatorTab() {
             href={appendUTM(STORE_LOCATOR_URL, utm)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackEvent("store_locator_full_list_click")}
-            className="text-[12px] font-bold text-[#E1251B] underline underline-offset-2"
+            onClick={() => trackEvent("store_locator_full_list_click", undefined, brand)}
+            className="text-[12px] font-bold text-[var(--brand-color-accent)] underline underline-offset-2"
           >
             Vedi tutti i punti vendita →
           </a>

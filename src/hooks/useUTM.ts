@@ -15,11 +15,13 @@ function subscribe(): () => void {
 // useSyncExternalStore requires getSnapshot to return a referentially
 // stable value when nothing changed (otherwise it re-renders forever
 // trying to resync). getUTMFromURL() builds a fresh object every call, so
-// it's computed once and cached here.
-let cachedSnapshot: UTMParams | null = null;
-function getSnapshot(): UTMParams {
-  if (!cachedSnapshot) cachedSnapshot = getUTMFromURL();
-  return cachedSnapshot;
+// it's computed once per brand and cached here.
+const cachedSnapshots: Partial<Record<string, UTMParams>> = {};
+function makeGetSnapshot(brand: string) {
+  return () => {
+    if (!cachedSnapshots[brand]) cachedSnapshots[brand] = getUTMFromURL(brand);
+    return cachedSnapshots[brand]!;
+  };
 }
 
 function getServerSnapshot(): UTMParams {
@@ -29,6 +31,10 @@ function getServerSnapshot(): UTMParams {
   return SERVER_SNAPSHOT;
 }
 
-export function useUTM(): UTMParams {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+/**
+ * `brand` ("dog" | "cat", default "dog") selects the fixed utm_source the
+ * hub stamps on its own links — see src/lib/utm.ts and src/lib/brand.ts.
+ */
+export function useUTM(brand: string = "dog"): UTMParams {
+  return useSyncExternalStore(subscribe, makeGetSnapshot(brand), getServerSnapshot);
 }

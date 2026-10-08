@@ -5,11 +5,12 @@ import { useEffect } from "react";
 /**
  * Fires a single "view" event on mount.
  */
-export default function ViewTracker() {
+export default function ViewTracker({ brand = "dog" }: { brand?: "dog" | "cat" }) {
   useEffect(() => {
     const payload = JSON.stringify({
       event_type: "view",
       referrer: document.referrer || null,
+      brand,
     });
 
     if (navigator.sendBeacon) {
@@ -25,7 +26,7 @@ export default function ViewTracker() {
         keepalive: true,
       }).catch(() => {});
     }
-  }, []);
+  }, [brand]);
 
   return null;
 }

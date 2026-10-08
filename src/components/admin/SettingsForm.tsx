@@ -4,9 +4,18 @@ import { useState } from "react";
 
 interface Props {
   initial: Record<string, string>;
+  /**
+   * "dog" (default) keeps the pre-existing behaviour: reads/writes the
+   * global `settings` table via /api/admin/settings, unchanged — see
+   * AGENTS.md ("NON toccare la tabella settings esistente"). Any other
+   * brand writes its own tagline/meta via /api/admin/brand-settings
+   * instead, and only exposes the fields that make sense per-brand
+   * (Trustpilot, the quiz and the discount are dog-only features today).
+   */
+  brand?: string;
 }
 
-const FIELDS: { key: string; label: string; type?: string }[] = [
+const DOG_FIELDS: { key: string; label: string; type?: string }[] = [
   { key: "tagline", label: "Tagline header" },
   { key: "meta_title", label: "Meta title" },
   { key: "meta_description", label: "Meta description" },
@@ -19,7 +28,15 @@ const FIELDS: { key: string; label: string; type?: string }[] = [
   { key: "trustpilot_locale", label: "Trustpilot locale" },
 ];
 
-export default function SettingsForm({ initial }: Props) {
+const OTHER_BRAND_FIELDS: { key: string; label: string; type?: string }[] = [
+  { key: "tagline", label: "Tagline header" },
+  { key: "meta_title", label: "Meta title" },
+  { key: "meta_description", label: "Meta description" },
+];
+
+export default function SettingsForm({ initial, brand = "dog" }: Props) {
+  const isDog = brand === "dog";
+  const FIELDS = isDog ? DOG_FIELDS : OTHER_BRAND_FIELDS;
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,11 +48,19 @@ export default function SettingsForm({ initial }: Props) {
 
   async function save() {
     setSaving(true);
-    await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
+    if (isDog) {
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+    } else {
+      await fetch("/api/admin/brand-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand, values }),
+      });
+    }
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

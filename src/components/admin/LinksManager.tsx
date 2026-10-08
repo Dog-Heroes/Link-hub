@@ -52,6 +52,8 @@ const LINK_TYPES = [
 interface Props {
   initialSections: Section[];
   initialLinks: LinkItem[];
+  tabId?: string;
+  brand?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -70,7 +72,7 @@ async function api(path: string, method: string, body?: object) {
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
-export default function LinksManager({ initialSections, initialLinks }: Props) {
+export default function LinksManager({ initialSections, initialLinks, tabId = "links", brand = "dog" }: Props) {
   const [sections, setSections] = useState(initialSections);
   const [links, setLinks] = useState(initialLinks);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -118,9 +120,9 @@ export default function LinksManager({ initialSections, initialLinks }: Props) {
     const order = sections.length;
     const newSection: Section = { id, label: "Nuova sezione", order, collapsed: 0 };
     setSections((prev) => [...prev, newSection]);
-    await api("sections", "POST", { id, tab_id: "links", label: "Nuova sezione", order });
+    await api("sections", "POST", { id, tab_id: tabId, brand, label: "Nuova sezione", order });
     setEditingId(`section-${id}`);
-  }, [sections]);
+  }, [sections, tabId, brand]);
 
   // --- Rename section ---
   const renameSection = useCallback(async (id: string, label: string) => {

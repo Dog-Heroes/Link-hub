@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, platform, url, order } = await req.json();
+  const { id, platform, url, order, brand } = await req.json();
 
   await db.execute({
-    sql: 'INSERT INTO social_links (id, platform, url, "order", enabled) VALUES (?, ?, ?, ?, 1)',
-    args: [id || crypto.randomUUID(), platform, url, order ?? 0],
+    sql: 'INSERT INTO social_links (id, platform, url, "order", enabled, brand) VALUES (?, ?, ?, ?, 1, ?)',
+    args: [id || crypto.randomUUID(), platform, url, order ?? 0, brand === "cat" ? "cat" : "dog"],
   });
 
   return NextResponse.json({ ok: true }, { status: 201 });

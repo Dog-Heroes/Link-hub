@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/lib/auth-actions";
+import BrandSwitch from "./BrandSwitch";
+import type { Brand } from "@/lib/brand";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
@@ -10,15 +12,17 @@ const NAV_ITEMS = [
   { href: "/admin/tabs", label: "Tab", icon: "📑" },
   { href: "/admin/social", label: "Social", icon: "💬" },
   { href: "/admin/quiz", label: "Quiz", icon: "🐕" },
+  { href: "/admin/aspetto", label: "Aspetto", icon: "🎨" },
   { href: "/admin/settings", label: "Impostazioni", icon: "⚙️" },
 ];
 
 interface AdminShellProps {
   user: { name?: string | null; email?: string | null; image?: string | null };
+  brand: Brand;
   children: React.ReactNode;
 }
 
-export default function AdminShell({ user, children }: AdminShellProps) {
+export default function AdminShell({ user, brand, children }: AdminShellProps) {
   const pathname = usePathname();
 
   return (
@@ -28,6 +32,10 @@ export default function AdminShell({ user, children }: AdminShellProps) {
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-lg font-bold text-[#E1251B]">Dog Heroes</h1>
           <p className="text-xs text-gray-400 mt-0.5">Admin Panel</p>
+        </div>
+
+        <div className="px-4 py-3 border-b border-gray-200">
+          <BrandSwitch active={brand} />
         </div>
 
         <nav className="flex-1 py-3">

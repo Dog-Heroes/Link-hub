@@ -75,11 +75,13 @@ function HeroCTAButton({
   sections,
   links,
   onNavigateTab,
+  brand,
 }: {
   utm: Record<string, string | undefined>;
   sections: SectionData[];
   links: LinkData[];
   onNavigateTab?: (tabId: string) => void;
+  brand: string;
 }) {
   // Hero CTA is the first link in the dedicated "hero-cta" section
   const heroSection = sections.find((s) => s.id === HERO_CTA_SECTION_ID);
@@ -100,11 +102,15 @@ function HeroCTAButton({
       e.preventDefault();
       onNavigateTab?.(tabId);
     }
-    trackEvent("link_hub_click", {
-      link_id: heroLink!.id,
-      label: heroLink!.label,
-      url: heroLink!.url,
-    });
+    trackEvent(
+      "link_hub_click",
+      {
+        link_id: heroLink!.id,
+        label: heroLink!.label,
+        url: heroLink!.url,
+      },
+      brand
+    );
   }
 
   return (
@@ -112,12 +118,12 @@ function HeroCTAButton({
       href={href}
       onClick={handleClick}
       className="
-        block w-full py-4 rounded-2xl
-        bg-[#E1251B] text-white
+        block w-full py-4 rounded-[var(--brand-radius)]
+        bg-[var(--brand-color-accent)] text-[var(--brand-color-button-text)]
         text-[16px] font-extrabold text-center uppercase tracking-wide
         min-h-[44px]
-        shadow-[0_4px_16px_rgba(225,37,27,0.3)]
-        active:scale-[0.97] hover:bg-[#C41E16]
+        shadow-[0_4px_16px_var(--brand-shadow-accent)]
+        active:scale-[0.97] hover:brightness-90
         transition-all
       "
     >
@@ -135,11 +141,13 @@ function CollapsibleSection({
   sectionLinks,
   utm,
   onNavigateTab,
+  brand,
 }: {
   section: SectionData;
   sectionLinks: LinkData[];
   utm: Record<string, string | undefined>;
   onNavigateTab?: (tabId: string) => void;
+  brand: string;
 }) {
   const [open, setOpen] = useState(!section.collapsed);
 
@@ -153,7 +161,7 @@ function CollapsibleSection({
           flex items-center justify-between w-full
           py-3 min-h-[44px]
           text-[12px] font-extrabold uppercase tracking-[0.15em]
-          text-[#002B49]/40
+          text-[var(--brand-color-text)]/40
         "
       >
         {section.label}
@@ -184,7 +192,7 @@ function CollapsibleSection({
           >
             <div className="flex flex-col gap-3 pb-2">
               {sectionLinks.map((link) => (
-                <LinkCard key={link.id} link={link} utm={utm} onNavigateTab={onNavigateTab} />
+                <LinkCard key={link.id} link={link} utm={utm} onNavigateTab={onNavigateTab} brand={brand} />
               ))}
             </div>
           </motion.div>
@@ -315,10 +323,12 @@ function VideoCard({
   link,
   href,
   onClick,
+  brand,
 }: {
   link: LinkData;
   href: string;
   onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  brand: string;
 }) {
   const { ref, inView, hasEntered } = useInView<HTMLDivElement>();
   const [muted, setMuted] = useState(true);
@@ -390,7 +400,7 @@ function VideoCard({
 
     if (!next) {
       // Reuse the existing click-tracking pipeline, tagged with the link id.
-      trackEvent("video_audio_on", { link_id: link.id });
+      trackEvent("video_audio_on", { link_id: link.id }, brand);
     }
   }
 
@@ -400,7 +410,7 @@ function VideoCard({
     : null;
 
   return (
-    <div className="rounded-2xl overflow-hidden border-2 border-[#002B49]/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+    <div className="rounded-[var(--brand-radius)] overflow-hidden border-2 border-[var(--brand-color-text)]/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
       <div
         ref={ref}
         className="relative w-full bg-black"
@@ -461,7 +471,7 @@ function VideoCard({
         onClick={onClick}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-3 px-4 py-3 bg-[var(--brand-color-card-bg)] hover:brightness-95 transition-colors"
       >
         <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
           {youtubeId ? (
@@ -470,7 +480,7 @@ function VideoCard({
             <PlayBadgeIcon />
           )}
         </span>
-        <span className="flex-1 text-[13px] font-semibold text-[#002B49]">
+        <span className="flex-1 text-[13px] font-semibold text-[var(--brand-color-text)]">
           {link.label}
         </span>
       </a>
@@ -486,10 +496,12 @@ function LinkCard({
   link,
   utm,
   onNavigateTab,
+  brand,
 }: {
   link: LinkData;
   utm: Record<string, string | undefined>;
   onNavigateTab?: (tabId: string) => void;
+  brand: string;
 }) {
   const tabId = internalTabId(link.url);
 
@@ -503,19 +515,23 @@ function LinkCard({
       e.preventDefault();
       onNavigateTab?.(tabId);
     }
-    trackEvent("link_hub_click", {
-      link_id: link.id,
-      label: link.label,
-      url: link.url,
-      ...Object.fromEntries(
-        Object.entries(utm).filter(([, v]) => v !== undefined)
-      ),
-    });
+    trackEvent(
+      "link_hub_click",
+      {
+        link_id: link.id,
+        label: link.label,
+        url: link.url,
+        ...Object.fromEntries(
+          Object.entries(utm).filter(([, v]) => v !== undefined)
+        ),
+      },
+      brand
+    );
   }
 
   // --- Video (YouTube embed or direct video file, e.g. cdn.shopify.com/videos/...) ---
   if (isVideoLink(link)) {
-    return <VideoCard link={link} href={href} onClick={handleClick} />;
+    return <VideoCard link={link} href={href} onClick={handleClick} brand={brand} />;
   }
 
   // --- Featured (big image + text below) ---
@@ -527,9 +543,9 @@ function LinkCard({
         target="_blank"
         rel="noopener noreferrer"
         className="
-          block rounded-2xl overflow-hidden
-          border-2 border-[#002B49]/8
-          active:scale-[0.97] hover:border-[#E1251B]/30 hover:shadow-md
+          block rounded-[var(--brand-radius)] overflow-hidden
+          border-2 border-[var(--brand-color-text)]/8
+          active:scale-[0.97] hover:border-[var(--brand-color-accent)]/30 hover:shadow-md
           transition-all
           shadow-[0_2px_8px_rgba(0,0,0,0.04)]
         "
@@ -542,10 +558,10 @@ function LinkCard({
             className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
-        <div className="px-4 py-3 bg-white text-center">
-          <p className="text-[14px] font-bold text-[#002B49]">{link.label}</p>
+        <div className="px-4 py-3 bg-[var(--brand-color-card-bg)] text-center">
+          <p className="text-[14px] font-bold text-[var(--brand-color-text)]">{link.label}</p>
           {link.badge && (
-            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-[#E1251B] text-white text-[11px] font-extrabold uppercase tracking-wide">
+            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-[var(--brand-color-accent)] text-[var(--brand-color-button-text)] text-[11px] font-extrabold uppercase tracking-wide">
               {link.badge}
             </span>
           )}
@@ -564,10 +580,10 @@ function LinkCard({
         rel="noopener noreferrer"
         className="
           flex items-center gap-3.5 px-3 py-2.5
-          bg-white rounded-2xl
+          bg-[var(--brand-color-card-bg)] rounded-[var(--brand-radius)]
           min-h-[44px]
-          border-2 border-[#002B49]/8
-          active:scale-[0.97] hover:border-[#E1251B]/30 hover:shadow-md
+          border-2 border-[var(--brand-color-text)]/8
+          active:scale-[0.97] hover:border-[var(--brand-color-accent)]/30 hover:shadow-md
           transition-all
           shadow-[0_2px_8px_rgba(0,0,0,0.04)]
         "
@@ -580,11 +596,11 @@ function LinkCard({
             className="w-full h-full object-cover"
           />
         </div>
-        <span className="flex-1 text-[14px] font-bold text-[#002B49]">
+        <span className="flex-1 text-[14px] font-bold text-[var(--brand-color-text)]">
           {link.label}
         </span>
         {link.badge && (
-          <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[#E1251B] text-white text-[11px] font-extrabold uppercase tracking-wide">
+          <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[var(--brand-color-accent)] text-[var(--brand-color-button-text)] text-[11px] font-extrabold uppercase tracking-wide">
             {link.badge}
           </span>
         )}
@@ -601,10 +617,10 @@ function LinkCard({
       {...(tabId ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       className="
         flex items-center gap-3.5 px-4 py-3.5
-        bg-white rounded-2xl
+        bg-[var(--brand-color-card-bg)] rounded-[var(--brand-radius)]
         min-h-[44px]
-        border-2 border-[#002B49]/8
-        active:scale-[0.97] hover:border-[#E1251B]/30 hover:shadow-md
+        border-2 border-[var(--brand-color-text)]/8
+        active:scale-[0.97] hover:border-[var(--brand-color-accent)]/30 hover:shadow-md
         transition-all
         shadow-[0_2px_8px_rgba(0,0,0,0.04)]
       "
@@ -619,17 +635,17 @@ function LinkCard({
           />
         </span>
       ) : (
-        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#E1251B]/8 flex items-center justify-center text-[#E1251B]">
+        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--brand-color-accent)]/8 flex items-center justify-center text-[var(--brand-color-accent)]">
           <LinkIcon name={link.icon} />
         </span>
       )}
 
-      <span className="flex-1 text-[14px] font-bold text-[#002B49]">
+      <span className="flex-1 text-[14px] font-bold text-[var(--brand-color-text)]">
         {link.label}
       </span>
 
       {link.badge && (
-        <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[#E1251B] text-white text-[11px] font-extrabold uppercase tracking-wide">
+        <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[var(--brand-color-accent)] text-[var(--brand-color-button-text)] text-[11px] font-extrabold uppercase tracking-wide">
           {link.badge}
         </span>
       )}
@@ -650,7 +666,7 @@ function ChevronIcon() {
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="flex-shrink-0 text-[#002B49]/20"
+      className="flex-shrink-0 text-[var(--brand-color-text)]/20"
     >
       <polyline points="9 18 15 12 9 6" />
     </svg>
@@ -665,19 +681,21 @@ export default function LinksTab({
   sections = [],
   links = [],
   onNavigateTab,
+  brand = "dog",
 }: {
   sections?: SectionData[];
   links?: LinkData[];
   onNavigateTab?: (tabId: string) => void;
+  brand?: string;
 }) {
-  const utm = useUTM();
+  const utm = useUTM(brand);
 
   // Separate the Hero CTA section (rendered by HeroCTAButton) from regular sections
   const regularSections = sections.filter((s) => s.id !== HERO_CTA_SECTION_ID);
 
   return (
     <div className="px-4 pt-5 flex flex-col gap-4">
-      <HeroCTAButton utm={utm} sections={sections} links={links} onNavigateTab={onNavigateTab} />
+      <HeroCTAButton utm={utm} sections={sections} links={links} onNavigateTab={onNavigateTab} brand={brand} />
 
       <div className="flex flex-col gap-1 mt-1">
         {regularSections.map((section) => (
@@ -687,6 +705,7 @@ export default function LinksTab({
             sectionLinks={links.filter((l) => l.section_id === section.id)}
             utm={utm}
             onNavigateTab={onNavigateTab}
+            brand={brand}
           />
         ))}
       </div>

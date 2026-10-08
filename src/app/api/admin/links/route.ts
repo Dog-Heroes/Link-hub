@@ -73,8 +73,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { id, section_id, label, url, icon, badge, order, link_type, media_url } = body;
 
+  // The link's brand is derived from its parent section — never trusted
+  // from the client — so a link can never end up tagged with a brand its
+  // section doesn't belong to.
+  const sectionRow = await db.execute({
+    sql: "SELECT brand FROM sections WHERE id = ?",
+    args: [section_id],
+  });
+  const brand = sectionRow.rows[0]?.brand ? String(sectionRow.rows[0].brand) : "dog";
+
   await db.execute({
-    sql: 'INSERT INTO links (id, section_id, label, url, icon, badge, "order", enabled, link_type, media_url) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
+    sql: 'INSERT INTO links (id, section_id, label, url, icon, badge, "order", enabled, link_type, media_url, brand) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)',
     args: [
       id || crypto.randomUUID(),
       section_id,
@@ -85,6 +94,7 @@ export async function POST(req: NextRequest) {
       order ?? 0,
       link_type || "link",
       media_url || null,
+      brand,
     ],
   });
 
