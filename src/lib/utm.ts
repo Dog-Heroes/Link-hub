@@ -69,14 +69,43 @@ export function isSiteUrl(url: string): boolean {
 }
 
 /**
+ * True for a Shopify `/discount/CODE?redirect=...` deep link: the storefront
+ * applies the discount then 302-redirects to `redirect`. To guarantee the
+ * hub's UTM survives that hop regardless of how the outer query string is
+ * handled, it is stamped *inside* `redirect`'s own value rather than on the
+ * outer URL — see {@link appendUTM}. (Verified via `curl -sIL` on
+ * dogheroes.it: a UTM nested this way does reach the final page; whether an
+ * outer-level UTM would also survive is not relied upon here.)
+ */
+function isDiscountRedirectUrl(parsed: URL): boolean {
+  return parsed.pathname.toLowerCase().startsWith("/discount/") && parsed.searchParams.has("redirect");
+}
+
+/**
  * Appends `utm` to `url` — but NEVER overwrites a utm_* the destination
  * already carries (e.g. a link pasted by hand in the CMS with its own
  * ?utm_source=... already set): the automatic addition is simply skipped
  * for whichever keys are already present.
+ *
+ * Special case: a `/discount/CODE?redirect=...` link (see
+ * {@link isDiscountRedirectUrl}) gets the UTM stamped *inside* the
+ * `redirect` param's own value instead of on the outer URL, so it survives
+ * Shopify's redirect to the destination page.
  */
 export function appendUTM(url: string, utm: UTMParams): string {
   try {
     const parsed = new URL(url);
+
+    if (isDiscountRedirectUrl(parsed)) {
+      const redirectRaw = parsed.searchParams.get("redirect") ?? "/";
+      const redirectUrl = new URL(redirectRaw, parsed.origin);
+      for (const [key, val] of Object.entries(utm)) {
+        if (val && !redirectUrl.searchParams.has(key)) redirectUrl.searchParams.set(key, val);
+      }
+      parsed.searchParams.set("redirect", redirectUrl.pathname + redirectUrl.search);
+      return parsed.toString();
+    }
+
     for (const [key, val] of Object.entries(utm)) {
       if (val && !parsed.searchParams.has(key)) parsed.searchParams.set(key, val);
     }

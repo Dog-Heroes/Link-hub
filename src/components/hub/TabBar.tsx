@@ -20,6 +20,13 @@ export default function TabBar({ tabs, sections, links, settings }: TabBarProps)
     ? TAB_REGISTRY[activeTab.component_key]
     : null;
 
+  // Used by a CMS link pointing at an internal tab (url = "#<tabId>", see
+  // LinksTab.tsx): only switches to a tab that actually exists and is
+  // enabled, so a stale/mistyped id never blanks the page.
+  function navigateToTab(tabId: string) {
+    if (tabs.some((t) => t.id === tabId)) setActiveId(tabId);
+  }
+
   return (
     <>
       <nav
@@ -56,6 +63,7 @@ export default function TabBar({ tabs, sections, links, settings }: TabBarProps)
             sections={sections.filter((s) => s.tab_id === activeTab?.id)}
             links={links}
             settings={settings}
+            onNavigateTab={navigateToTab}
           />
         )}
       </div>
