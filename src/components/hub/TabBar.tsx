@@ -9,9 +9,10 @@ interface TabBarProps {
   sections: SectionData[];
   links: LinkData[];
   settings: Record<string, string>;
+  brand?: "dog" | "cat";
 }
 
-export default function TabBar({ tabs, sections, links, settings }: TabBarProps) {
+export default function TabBar({ tabs, sections, links, settings, brand = "dog" }: TabBarProps) {
   const defaultTab = tabs[0]?.id ?? "links";
   const [activeId, setActiveId] = useState(defaultTab);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -68,8 +69,8 @@ export default function TabBar({ tabs, sections, links, settings }: TabBarProps)
               min-h-[36px] border-[1.5px]
               ${
                 activeId === tab.id
-                  ? "bg-white text-[#E1251B] border-white"
-                  : "bg-transparent text-white border-white/60 hover:border-white hover:bg-white/10"
+                  ? "bg-[var(--brand-color-card-bg)] text-[var(--brand-color-accent)] border-[var(--brand-color-card-bg)]"
+                  : "bg-transparent text-[var(--brand-color-header-text)] border-[var(--brand-color-header-text)]/40 hover:border-[var(--brand-color-header-text)] hover:bg-[var(--brand-color-header-text)]/10"
               }
             `}
           >
@@ -78,13 +79,14 @@ export default function TabBar({ tabs, sections, links, settings }: TabBarProps)
         ))}
       </nav>
 
-      <div className="bg-white rounded-t-3xl min-h-[60vh] pb-8" role="tabpanel">
+      <div className="bg-[var(--brand-color-card-bg)] rounded-t-[var(--brand-radius)] min-h-[60vh] pb-8" role="tabpanel">
         {ActiveComponent && (
           <ActiveComponent
             sections={sections.filter((s) => s.tab_id === activeTab?.id)}
             links={links}
             settings={settings}
             onNavigateTab={navigateToTab}
+            brand={brand}
           />
         )}
       </div>

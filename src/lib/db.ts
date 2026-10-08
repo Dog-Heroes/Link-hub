@@ -89,6 +89,18 @@ export async function migrate() {
     -- vecchia tabella "stores" in un DB esistente NON va droppata qui
     -- (dati di produzione): resta semplicemente inutilizzata.
 
+    -- Multi-brand (dog / cat, see src/lib/brand.ts): per-brand settings such
+    -- as tagline, meta title/description and the editable "Aspetto" style.
+    -- Kept SEPARATE from the pre-existing global settings table (whose
+    -- primary key has no brand dimension and must not change) -- /hub keeps
+    -- reading that table exactly as before.
+    CREATE TABLE IF NOT EXISTS brand_settings (
+      brand TEXT NOT NULL,
+      key   TEXT NOT NULL,
+      value TEXT NOT NULL,
+      PRIMARY KEY (brand, key)
+    );
+
     -- Index for analytics queries
     CREATE INDEX IF NOT EXISTS idx_events_link_id ON events(link_id);
     CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
@@ -96,4 +108,26 @@ export async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_sections_tab_id ON sections(tab_id);
     CREATE INDEX IF NOT EXISTS idx_quiz_options_field ON quiz_options(field);
   `);
+
+  // Additive, backward-compatible column: every existing row defaults to
+  // 'dog' so /hub (and any code already deployed) keeps working unchanged
+  // after this migration runs. Guarded by PRAGMA table_info so it's safe to
+  // call on every boot (ALTER TABLE ... ADD COLUMN has no "IF NOT EXISTS" in
+  // SQLite/libSQL).
+  await addColumnIfMissing("tabs", "brand", "TEXT NOT NULL DEFAULT 'dog'");
+  await addColumnIfMissing("sections", "brand", "TEXT NOT NULL DEFAULT 'dog'");
+  await addColumnIfMissing("links", "brand", "TEXT NOT NULL DEFAULT 'dog'");
+  await addColumnIfMissing("social_links", "brand", "TEXT NOT NULL DEFAULT 'dog'");
+  // Lets analytics be split by brand even for events with no link_id (page
+  // views, store searches…) where the brand can't be derived by joining
+  // through `links`.
+  await addColumnIfMissing("events", "brand", "TEXT NOT NULL DEFAULT 'dog'");
+}
+
+async function addColumnIfMissing(table: string, column: string, definition: string) {
+  const info = await db.execute(`PRAGMA table_info(${table})`);
+  const exists = info.rows.some((r) => String(r.name) === column);
+  if (!exists) {
+    await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
 }

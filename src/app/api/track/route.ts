@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
     const link_id = body.link_id ? String(body.link_id) : null;
     const referrer = body.referrer ? String(body.referrer) : null;
     const user_agent = req.headers.get("user-agent") || null;
+    const brand = body.brand === "cat" ? "cat" : "dog";
 
     // Insert event
     await db.execute({
-      sql: `INSERT INTO events (link_id, event_type, referrer, user_agent)
-            VALUES (?, ?, ?, ?)`,
-      args: [link_id, event_type, referrer, user_agent],
+      sql: `INSERT INTO events (link_id, event_type, referrer, user_agent, brand)
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [link_id, event_type, referrer, user_agent, brand],
     });
 
     // Increment click_count on the link for backward compat

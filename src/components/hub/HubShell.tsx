@@ -3,6 +3,15 @@ import TabBar from "./TabBar";
 import TrustpilotWidget from "./TrustpilotWidget";
 import ViewTracker from "./ViewTracker";
 import { db } from "@/lib/db";
+import {
+  type Brand,
+  type BrandStyle,
+  defaultStyleFor,
+  sanitizeStyle,
+  styleToCSSVars,
+  googleFontHref,
+  BRAND_LABEL,
+} from "@/lib/brand";
 
 /* ------------------------------------------------------------------ */
 /*  Types shared with client components                                */
@@ -52,22 +61,72 @@ const ICON_MAP: Record<string, () => React.JSX.Element> = {
 /*  Data fetching                                                      */
 /* ------------------------------------------------------------------ */
 
-async function getContent() {
+const DOG_DEFAULT_TAGLINE = "L'azienda italiana del cibo fresco";
+const CAT_DEFAULT_TAGLINE = "Il cibo fresco per gatti, firmato Dog Heroes";
+
+const DOG_FALLBACK_SOCIAL = [
+  { platform: "instagram", url: "https://instagram.com/dogheroes.it" },
+  { platform: "tiktok", url: "https://tiktok.com/@dogheroes.it" },
+  { platform: "youtube", url: "https://www.youtube.com/@dogheroes" },
+  { platform: "linkedin", url: "https://www.linkedin.com/company/dog-heroes/" },
+  { platform: "facebook", url: "https://www.facebook.com/dogheroes.it" },
+];
+
+/**
+ * Merges saved brand_settings rows onto the brand's default style — unknown
+ * or invalid fields (see sanitizeStyle) are ignored, so a bad/missing row
+ * never corrupts the result: "dog" with no brand_settings rows renders
+ * pixel-identical to the style that was hardcoded before this feature.
+ */
+function buildStyle(brand: Brand, brandSettings: Record<string, string>): BrandStyle {
+  const base = defaultStyleFor(brand);
+  const raw: Record<string, string> = {};
+  for (const key of Object.keys(base) as (keyof BrandStyle)[]) {
+    if (brandSettings[key] !== undefined) raw[key] = brandSettings[key];
+  }
+  const sanitized = sanitizeStyle(raw);
+  return { ...base, ...sanitized };
+}
+
+async function getContent(brand: Brand) {
+  const fallback = {
+    settings: {} as Record<string, string>,
+    tabs: [] as TabData[],
+    sections: [] as SectionData[],
+    links: [] as LinkData[],
+    socialLinks: brand === "dog" ? DOG_FALLBACK_SOCIAL : [],
+    tagline: brand === "dog" ? DOG_DEFAULT_TAGLINE : CAT_DEFAULT_TAGLINE,
+    style: defaultStyleFor(brand),
+  };
+
   try {
-    const [settingsRows, tabsRows, sectionsRows, linksRows, socialRows] =
+    const [settingsRows, brandSettingsRows, tabsRows, sectionsRows, linksRows, socialRows] =
       await Promise.all([
         db.execute("SELECT key, value FROM settings"),
-        db.execute('SELECT * FROM tabs WHERE enabled = 1 ORDER BY "order"'),
-        db.execute('SELECT * FROM sections ORDER BY "order"'),
-        db.execute('SELECT * FROM links WHERE enabled = 1 ORDER BY "order"'),
-        db.execute(
-          'SELECT platform, url FROM social_links WHERE enabled = 1 ORDER BY "order"'
-        ),
+        db.execute({ sql: "SELECT key, value FROM brand_settings WHERE brand = ?", args: [brand] }),
+        db.execute({
+          sql: 'SELECT * FROM tabs WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+          args: [brand],
+        }),
+        db.execute({ sql: 'SELECT * FROM sections WHERE brand = ? ORDER BY "order"', args: [brand] }),
+        db.execute({
+          sql: 'SELECT * FROM links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+          args: [brand],
+        }),
+        db.execute({
+          sql: 'SELECT platform, url FROM social_links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+          args: [brand],
+        }),
       ]);
 
     const settings: Record<string, string> = {};
     for (const row of settingsRows.rows) {
       settings[String(row.key)] = String(row.value);
+    }
+
+    const brandSettings: Record<string, string> = {};
+    for (const row of brandSettingsRows.rows) {
+      brandSettings[String(row.key)] = String(row.value);
     }
 
     const tabs: TabData[] = tabsRows.rows.map((r) => ({
@@ -103,38 +162,50 @@ async function getContent() {
       url: String(r.url),
     }));
 
-    return { settings, tabs, sections, links, socialLinks };
+    // Non-style settings: "dog" keeps reading the pre-existing global
+    // `settings` table exactly as before; "cat" (and any brand without a
+    // dedicated global table) uses brand_settings instead.
+    const tagline =
+      brand === "dog"
+        ? settings.tagline || DOG_DEFAULT_TAGLINE
+        : brandSettings.tagline || CAT_DEFAULT_TAGLINE;
+
+    const style = buildStyle(brand, brandSettings);
+
+    return { settings, tabs, sections, links, socialLinks, tagline, style };
   } catch {
-    return {
-      settings: {} as Record<string, string>,
-      tabs: [] as TabData[],
-      sections: [] as SectionData[],
-      links: [] as LinkData[],
-      socialLinks: [
-        { platform: "instagram", url: "https://instagram.com/dogheroes.it" },
-        { platform: "tiktok", url: "https://tiktok.com/@dogheroes.it" },
-        { platform: "youtube", url: "https://www.youtube.com/@dogheroes" },
-        { platform: "linkedin", url: "https://www.linkedin.com/company/dog-heroes/" },
-        { platform: "facebook", url: "https://www.facebook.com/dogheroes.it" },
-      ],
-    };
+    return fallback;
   }
 }
 
-export default async function HubShell() {
-  const { settings, tabs, sections, links, socialLinks } = await getContent();
-  const tagline = settings.tagline || "L'azienda italiana del cibo fresco";
+export default async function HubShell({ brand = "dog" }: { brand?: Brand }) {
+  const { settings, tabs, sections, links, socialLinks, tagline, style } = await getContent(brand);
+  const cssVars = styleToCSSVars(style) as React.CSSProperties;
+  const fontHref = googleFontHref(style.fontHeading) ?? googleFontHref(style.fontBody);
+  const logoAlt = BRAND_LABEL[brand];
+  // The pre-existing white SVG wordmark is sized for the red dog header;
+  // the Cat Heroes default logo (a black wordmark on transparent/yellow) is
+  // a plain raster image, so it's rendered with next/image's "auto" layout
+  // instead of the fixed 220x110 box the dog logo was tuned for.
+  const isDefaultDogLogo = style.logoUrl === "/images/hub/logo-white.svg";
 
   return (
-    <div className="min-h-screen bg-[#e8e4de] flex items-start justify-center">
-      <ViewTracker />
-      <div className="w-full max-w-[430px] min-h-screen bg-[#E1251B] relative overflow-x-hidden shadow-2xl">
-        <header className="relative bg-[#E1251B] px-6 pt-10 pb-4 text-center">
+    <div
+      className="min-h-screen flex items-start justify-center"
+      style={{ ...cssVars, background: "var(--brand-color-page-bg)" }}
+    >
+      {fontHref && <link rel="stylesheet" href={fontHref} />}
+      <ViewTracker brand={brand} />
+      <div
+        className="w-full max-w-[430px] min-h-screen relative overflow-x-hidden shadow-2xl"
+        style={{ background: "var(--brand-color-header-bg)" }}
+      >
+        <header className="relative px-6 pt-10 pb-4 text-center">
           {/* Logo */}
-          <div className="relative mx-auto mb-4 w-[220px]">
+          <div className={`relative mx-auto mb-4 ${isDefaultDogLogo ? "w-[220px]" : "w-[180px]"}`}>
             <Image
-              src="/images/hub/logo-white.svg"
-              alt="Dog Heroes"
+              src={style.logoUrl}
+              alt={logoAlt}
               width={220}
               height={110}
               priority
@@ -142,34 +213,38 @@ export default async function HubShell() {
             />
           </div>
 
-          {/* Tagline — from DB */}
+          {/* Tagline — from DB (brand_settings for cat, settings for dog) */}
           <p
-            className="relative text-white text-[15px] leading-snug font-normal tracking-wide"
-            style={{ fontFamily: "var(--font-brand)" }}
+            className="relative text-[15px] leading-snug font-normal tracking-wide"
+            style={{ fontFamily: "var(--font-brand)", color: "var(--brand-color-header-text)" }}
           >
             {tagline}
           </p>
 
-          {/* Social icons — from DB */}
-          <div className="relative flex justify-center gap-5 mt-5">
-            {socialLinks.map((social) => {
-              const IconComponent = ICON_MAP[social.platform];
-              if (!IconComponent) return null;
-              return (
-                <SocialLink key={social.platform} href={social.url} label={social.platform}>
-                  <IconComponent />
-                </SocialLink>
-              );
-            })}
-          </div>
+          {/* Social icons — from DB, filtered by brand */}
+          {socialLinks.length > 0 && (
+            <div className="relative flex justify-center gap-5 mt-5">
+              {socialLinks.map((social) => {
+                const IconComponent = ICON_MAP[social.platform];
+                if (!IconComponent) return null;
+                return (
+                  <SocialLink key={social.platform} href={social.url} label={social.platform}>
+                    <IconComponent />
+                  </SocialLink>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Trustpilot */}
-          <div className="relative mt-4">
-            <TrustpilotWidget />
-          </div>
+          {/* Trustpilot — Dog Heroes business unit only, not shown on /cat */}
+          {brand === "dog" && (
+            <div className="relative mt-4">
+              <TrustpilotWidget />
+            </div>
+          )}
         </header>
 
-        <TabBar tabs={tabs} sections={sections} links={links} settings={settings} />
+        <TabBar tabs={tabs} sections={sections} links={links} settings={settings} brand={brand} />
       </div>
     </div>
   );
@@ -190,7 +265,8 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex items-center justify-center text-white hover:opacity-70 active:scale-95 transition-all"
+      className="flex items-center justify-center hover:opacity-70 active:scale-95 transition-all"
+      style={{ color: "var(--brand-color-header-text)" }}
     >
       {children}
     </a>

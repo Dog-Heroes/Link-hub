@@ -1,9 +1,13 @@
 import { db } from "@/lib/db";
 import LinksManager from "@/components/admin/LinksManager";
+import { getAdminBrand } from "@/lib/admin-brand";
+import { linksTabId, BRAND_LABEL } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
 export default async function LinksPage() {
+  const brand = await getAdminBrand();
+  const tabId = linksTabId(brand);
   let sections: { id: string; label: string; order: number; collapsed: number }[] = [];
   let links: {
     id: string;
@@ -20,9 +24,10 @@ export default async function LinksPage() {
   }[] = [];
 
   try {
-    const sResult = await db.execute(
-      'SELECT id, label, "order", collapsed FROM sections WHERE tab_id = \'links\' ORDER BY "order"'
-    );
+    const sResult = await db.execute({
+      sql: 'SELECT id, label, "order", collapsed FROM sections WHERE tab_id = ? ORDER BY "order"',
+      args: [tabId],
+    });
     sections = sResult.rows.map((r) => ({
       id: String(r.id),
       label: String(r.label),
@@ -30,9 +35,10 @@ export default async function LinksPage() {
       collapsed: Number(r.collapsed),
     }));
 
-    const lResult = await db.execute(
-      'SELECT l.* FROM links l JOIN sections s ON l.section_id = s.id WHERE s.tab_id = \'links\' ORDER BY l."order"'
-    );
+    const lResult = await db.execute({
+      sql: 'SELECT l.* FROM links l JOIN sections s ON l.section_id = s.id WHERE s.tab_id = ? ORDER BY l."order"',
+      args: [tabId],
+    });
     links = lResult.rows.map((r) => ({
       id: String(r.id),
       section_id: String(r.section_id),
@@ -52,8 +58,8 @@ export default async function LinksPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#002B49] mb-6">Gestione Link</h1>
-      <LinksManager initialSections={sections} initialLinks={links} />
+      <h1 className="text-2xl font-bold text-[#002B49] mb-6">Gestione Link — {BRAND_LABEL[brand]}</h1>
+      <LinksManager initialSections={sections} initialLinks={links} tabId={tabId} brand={brand} />
     </div>
   );
 }

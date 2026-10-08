@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
+import { getAdminBrand } from "@/lib/admin-brand";
 
 export default async function DashboardLayout({
   children,
@@ -13,5 +14,11 @@ export default async function DashboardLayout({
     redirect("/admin/login");
   }
 
-  return <AdminShell user={session.user}>{children}</AdminShell>;
+  const brand = await getAdminBrand();
+
+  return (
+    <AdminShell user={session.user} brand={brand}>
+      {children}
+    </AdminShell>
+  );
 }
