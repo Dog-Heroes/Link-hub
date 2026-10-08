@@ -20,13 +20,30 @@ export default function HealthStep() {
         Salute
       </h2>
 
-      {/* Sterilizzato */}
+      {/* Sterilizzato — NESSUN default: il sito stesso non ne ha uno
+          (verificato dal vivo), per questo sono due bottoni indipendenti
+          invece del ToggleSwitch, che mostrerebbe sempre una scelta come
+          "attiva" fin dall'inizio. */}
       <FormField label="È sterilizzato/a?">
-        <ToggleSwitch
-          options={[opts.sterilization[0], opts.sterilization[1]]}
-          value={health.neutered}
-          onChange={(v) => setHealth("neutered", v)}
-        />
+        <div className="flex gap-2">
+          {[opts.sterilization[0], opts.sterilization[1]].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setHealth("neutered", opt.value)}
+              className={`
+                flex-1 py-3 rounded-xl text-[13px] font-bold transition-colors min-h-[44px]
+                ${
+                  health.neutered === opt.value
+                    ? "bg-[#E1251B] text-white border-2 border-[#E1251B]"
+                    : "bg-white text-[#002B49] border-2 border-[#002B49]/10 hover:border-[#E1251B]/30"
+                }
+              `}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </FormField>
 
       {/* Livello attivita */}

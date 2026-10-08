@@ -27,10 +27,14 @@ export default function DogSummaryCard() {
       text: labelFor(options?.sex, dog.gender),
     });
   }
-  if (dog.ageYears || dog.ageMonths) {
+  // ageYears/ageMonths are the raw <select> string values ("" = not chosen
+  // yet, see QuizContext) — "0" is a deliberate, valid choice (the site
+  // itself accepts a newborn "0 anni e 0 mesi"), so it must still show up
+  // here once explicitly picked, unlike the empty/unset string.
+  if (dog.ageYears !== "" || dog.ageMonths !== "") {
     const parts = [];
-    if (dog.ageYears) parts.push(`${dog.ageYears} ann${dog.ageYears === 1 ? "o" : "i"}`);
-    if (dog.ageMonths) parts.push(`${dog.ageMonths} mes${dog.ageMonths === 1 ? "e" : "i"}`);
+    if (dog.ageYears !== "") parts.push(`${dog.ageYears} ann${Number(dog.ageYears) === 1 ? "o" : "i"}`);
+    if (dog.ageMonths !== "") parts.push(`${dog.ageMonths} mes${Number(dog.ageMonths) === 1 ? "e" : "i"}`);
     rows.push({ icon: "🎂", text: parts.join(" e ") });
   }
 

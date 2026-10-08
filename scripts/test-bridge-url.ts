@@ -13,7 +13,7 @@
  */
 
 import { getQuizOptions, type QuizOptions } from "../src/lib/quiz-options";
-import { buildBridgeUrl, buildCustomerFragment, isQuizValid, approximateBirthday } from "../src/components/quiz/steps/PlanStep";
+import { buildBridgeUrl, buildCustomerFragment, isQuizValid, getMissingFields, approximateBirthday } from "../src/components/quiz/steps/PlanStep";
 import type { DogData, HealthData, CustomerData } from "../src/components/quiz/QuizContext";
 import { appendUTM, getFixedUTM } from "../src/lib/utm";
 
@@ -54,8 +54,8 @@ async function main() {
     breed: breed.value,
     breedLabel: breed.label,
     gender: "female",
-    ageYears: 2,
-    ageMonths: 3,
+    ageYears: "2",
+    ageMonths: "3",
     weight: "12.5",
     bodyCondition: bodyCondition.value,
   };
@@ -210,6 +210,35 @@ async function main() {
     !isQuizValid(dog, { ...health, hasDiseases: "yes", healthIssues: [] }, options),
     "has_diseases=yes with no disease selected is rejected by isQuizValid"
   );
+
+  // Fields the live site itself has NO default for (verified live,
+  // 08/10/2026): sesso, sterilizzazione and both age fields. The hub must
+  // not preselect any of these — an empty value for any of them keeps the
+  // whole quiz invalid, exactly like the site's own "Prosegui" staying
+  // disabled.
+  assert(!isQuizValid({ ...dog, gender: "" }, health, options), "quiz without sesso (no default on the site either) is rejected");
+  assert(!isQuizValid(dog, { ...health, neutered: "" }, options), "quiz without sterilizzazione (no default on the site either) is rejected");
+  assert(!isQuizValid({ ...dog, ageYears: "" }, health, options), "quiz without anni (età) is rejected even if mesi is set");
+  assert(!isQuizValid({ ...dog, ageMonths: "" }, health, options), "quiz without mesi (età) is rejected even if anni is set");
+
+  // ...but once BOTH age fields are explicitly chosen, "0 anni e 0 mesi" is
+  // itself a valid combination — the live site's own age step accepts it
+  // (verified live: "Prosegui" enables with both fields at "0"), it is
+  // simply never the one shown by default.
+  assert(isQuizValid({ ...dog, ageYears: "0", ageMonths: "0" }, health, options), "0 anni + 0 mesi is a VALID age once both are explicitly chosen (matches the site)");
+
+  // getMissingFields names every missing required field, used to tell the
+  // user what's left before the CTA is enabled.
+  const emptyDog: DogData = { name: "", breed: "", breedLabel: "", gender: "", ageYears: "", ageMonths: "", weight: "", bodyCondition: "ideale" };
+  const emptyHealth: HealthData = { neutered: "", activity: "attivo", hunger: "", diet: [], allergies: ["nessuna"], hasDiseases: "no", healthIssues: [] };
+  const missing = getMissingFields(emptyDog, emptyHealth, options);
+  for (const label of ["Nome", "Razza", "Sesso", "Età", "Peso", "Sterilizzazione", "Appetito", "Dieta"]) {
+    assert(missing.includes(label), `getMissingFields reports "${label}" missing on a blank quiz`);
+  }
+  // Fields the site itself defaults to a visible value are never reported
+  // missing just because they're untouched (bodyCondition "ideale",
+  // activity "attivo", allergies "nessuna", hasDiseases "no" above).
+  assert(getMissingFields(dog, health, options).length === 0, "a fully filled-in quiz (sample dog/health) reports nothing missing");
 
   console.log(failures === 0 ? "\nAll checks passed.\n" : `\n${failures} check(s) failed.\n`);
   process.exit(failures === 0 ? 0 : 1);

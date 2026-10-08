@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { useQuiz } from "../QuizContext";
 import FormField from "../ui/FormField";
-import ToggleSwitch from "../ui/ToggleSwitch";
 
 export default function DogDetailsStep() {
   const { state, dispatch } = useQuiz();
@@ -97,24 +96,50 @@ export default function DogDetailsStep() {
         </div>
       </FormField>
 
-      {/* Sesso */}
+      {/* Sesso — NESSUN default: il sito stesso non ne ha uno (verificato
+          dal vivo), per questo sono due bottoni indipendenti (come
+          Corporatura più sotto) invece del ToggleSwitch, che mostrerebbe
+          sempre una delle due opzioni come "attiva". */}
       <FormField label="Sesso">
-        <ToggleSwitch
-          options={[options!.sex[0], options!.sex[1]]}
-          value={dog.gender}
-          onChange={(v) => setDog("gender", v)}
-        />
+        <div className="flex gap-2">
+          {[options!.sex[0], options!.sex[1]].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setDog("gender", opt.value)}
+              className={`
+                flex-1 py-3 rounded-xl text-[13px] font-bold transition-colors min-h-[44px]
+                ${
+                  dog.gender === opt.value
+                    ? "bg-[#E1251B] text-white border-2 border-[#E1251B]"
+                    : "bg-white text-[#002B49] border-2 border-[#002B49]/10 hover:border-[#E1251B]/30"
+                }
+              `}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </FormField>
 
-      {/* Eta */}
+      {/* Eta — NESSUN default (placeholder "Anni"/"Mesi"): il sito lascia
+          questi due campi vuoti finché l'utente non sceglie esplicitamente
+          un valore per entrambi (0 anni + 0 mesi è accettato dal sito una
+          volta scelto, ma non è mai preselezionato — verificato dal vivo,
+          vedi isQuizValid in PlanStep.tsx). */}
       <FormField label="Quanti anni ha?">
         <div className="flex gap-3">
           <div className="flex-1">
             <select
               value={dog.ageYears}
-              onChange={(e) => setDog("ageYears", Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] text-[#002B49] focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px] bg-white"
+              onChange={(e) => setDog("ageYears", e.target.value)}
+              className={`w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px] bg-white ${
+                dog.ageYears === "" ? "text-[#002B49]/40" : "text-[#002B49]"
+              }`}
             >
+              <option value="" disabled hidden>
+                Anni
+              </option>
               {Array.from({ length: 21 }, (_, i) => (
                 <option key={i} value={i}>
                   {i} {i === 1 ? "anno" : "anni"}
@@ -125,9 +150,14 @@ export default function DogDetailsStep() {
           <div className="flex-1">
             <select
               value={dog.ageMonths}
-              onChange={(e) => setDog("ageMonths", Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] text-[#002B49] focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px] bg-white"
+              onChange={(e) => setDog("ageMonths", e.target.value)}
+              className={`w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px] bg-white ${
+                dog.ageMonths === "" ? "text-[#002B49]/40" : "text-[#002B49]"
+              }`}
             >
+              <option value="" disabled hidden>
+                Mesi
+              </option>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i} value={i}>
                   {i} {i === 1 ? "mese" : "mesi"}

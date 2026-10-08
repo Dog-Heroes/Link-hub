@@ -18,15 +18,22 @@ export interface DogData {
   name: string;
   breed: string;       // handle, e.g. "labrador-retriever" ("" = not chosen)
   breedLabel: string;  // display name kept in sync with `breed`
-  gender: string;       // "male" | "female"
-  ageYears: number;
-  ageMonths: number;
+  gender: string;       // "" (not chosen) | "male" | "female" — the site has
+                         // no default either, see the dropdown's un-set state
+  // Kept as the raw <select> string value, not a number, so "" (not chosen)
+  // is distinguishable from "0" (explicitly chosen): the live site accepts
+  // 0 anni + 0 mesi as a valid age once BOTH are picked, but shows no
+  // default and requires an explicit choice for each (verified live,
+  // 08/10/2026 — see isQuizValid in PlanStep.tsx).
+  ageYears: string;
+  ageMonths: string;
   weight: string;
   bodyCondition: string; // handle, e.g. "ideale"
 }
 
 export interface HealthData {
-  neutered: string;        // "yes" | "no"
+  neutered: string;        // "" (not chosen) | "yes" | "no" — no default on
+                             // the site either, must be chosen explicitly
   activity: string;        // handle, e.g. "attivo"
   hunger: string;           // handle, e.g. "ghiotto" ("" = not chosen)
   diet: string[];           // handles, e.g. ["secco", "umido"]
@@ -81,14 +88,14 @@ const initialState: QuizState = {
     name: "",
     breed: "",
     breedLabel: "",
-    gender: "male",
-    ageYears: 0,
-    ageMonths: 0,
+    gender: "", // no default on the site (verified live, 08/10/2026)
+    ageYears: "", // idem — Anni/Mesi start empty, not "0"
+    ageMonths: "",
     weight: "",
     bodyCondition: "ideale",
   },
   health: {
-    neutered: "no",
+    neutered: "", // no default on the site (verified live, 08/10/2026)
     activity: "attivo",
     hunger: "",
     diet: [],

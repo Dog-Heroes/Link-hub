@@ -83,7 +83,9 @@ function buildBridgeUrl(dog: DogData, health: HealthData, customer: CustomerData
   params.set("name", dog.name.trim());
   params.set("breed", dog.breed);
   params.set("sex", dog.gender);
-  params.set("birthday", approximateBirthday(dog.ageYears, dog.ageMonths));
+  // isQuizValid guarantees both are a chosen, non-empty value (even "0" is
+  // valid, see DogData.ageYears/ageMonths) before this is ever called.
+  params.set("birthday", approximateBirthday(Number(dog.ageYears), Number(dog.ageMonths)));
   params.set("weight", dog.weight);
   params.set("build", dog.bodyCondition);
   params.set("activity", health.activity);
@@ -111,15 +113,37 @@ function buildBridgeUrl(dog: DogData, health: HealthData, customer: CustomerData
   return fragment ? `${quizData.submitUrl}?${query}#${fragment}` : `${quizData.submitUrl}?${query}`;
 }
 
+/**
+ * Required fields, aligned 1:1 with what the live quiz on dogheroes.it
+ * itself requires (verified live, 08/10/2026 — each one blocks "Prosegui"
+ * there until chosen, with no default): name, breed, sex, BOTH age
+ * fields (0 is a valid choice once picked — the site accepts "0 anni + 0
+ * mesi" — but neither starts pre-filled), weight, sterilization, hunger,
+ * diet (at least one), and the disease list when "Ha esigenze di salute"
+ * is "sì". Fields the site itself defaults to a visible value — body
+ * condition "ideale", activity "attivo", allergies "nessuna", has_diseases
+ * "no" — are intentionally NOT required here either: the hub mirrors the
+ * same defaults, so leaving them untouched is the same as on the site.
+ */
 function isQuizValid(dog: DogData, health: HealthData, options: QuizOptions | null): boolean {
-  if (!options) return false;
-  if (!dog.name.trim()) return false;
-  if (!dog.breed) return false;
-  if (!dog.weight || Number(dog.weight) <= 0) return false;
-  if (!health.hunger) return false;
-  if (health.diet.length === 0) return false;
-  if (health.hasDiseases === "yes" && health.healthIssues.length === 0) return false;
-  return true;
+  return getMissingFields(dog, health, options).length === 0;
+}
+
+/** Italian labels for whatever required field above is still missing — shown
+ * near the CTA so a disabled button always says why. */
+function getMissingFields(dog: DogData, health: HealthData, options: QuizOptions | null): string[] {
+  if (!options) return [];
+  const missing: string[] = [];
+  if (!dog.name.trim()) missing.push("Nome");
+  if (!dog.breed) missing.push("Razza");
+  if (!dog.gender) missing.push("Sesso");
+  if (dog.ageYears === "" || dog.ageMonths === "") missing.push("Età");
+  if (!dog.weight || Number(dog.weight) <= 0) missing.push("Peso");
+  if (!health.neutered) missing.push("Sterilizzazione");
+  if (!health.hunger) missing.push("Appetito");
+  if (health.diet.length === 0) missing.push("Dieta");
+  if (health.hasDiseases === "yes" && health.healthIssues.length === 0) missing.push("Patologie");
+  return missing;
 }
 
 export default function PlanStep() {
@@ -127,7 +151,8 @@ export default function PlanStep() {
   const { dog, health, customer, options } = state;
   const utm = useUTM();
 
-  const isValid = isQuizValid(dog, health, options);
+  const missingFields = getMissingFields(dog, health, options);
+  const isValid = missingFields.length === 0;
 
   function setCustomer<K extends keyof CustomerData>(field: K, value: CustomerData[K]) {
     dispatch({ type: "SET_CUSTOMER", field, value });
@@ -269,8 +294,14 @@ export default function PlanStep() {
       >
         Scopri le ricette per {dog.name || "il tuo cane"}
       </button>
+
+      {!isValid && missingFields.length > 0 && (
+        <p className="text-[12px] text-[#E1251B] text-center -mt-2">
+          Manca: {missingFields.join(", ")}
+        </p>
+      )}
     </section>
   );
 }
 
-export { buildBridgeUrl, buildCustomerFragment, isQuizValid, approximateBirthday };
+export { buildBridgeUrl, buildCustomerFragment, isQuizValid, getMissingFields, approximateBirthday };
