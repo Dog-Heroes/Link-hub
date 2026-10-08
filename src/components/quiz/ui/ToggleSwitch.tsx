@@ -2,14 +2,19 @@
 
 import { motion } from "framer-motion";
 
+interface ToggleOption {
+  value: string;
+  label: string;
+}
+
 interface ToggleSwitchProps {
-  options: [string, string]; // [left, right]
+  options: [ToggleOption, ToggleOption]; // [left, right]
   value: string;
   onChange: (value: string) => void;
 }
 
 export default function ToggleSwitch({ options, value, onChange }: ToggleSwitchProps) {
-  const activeIndex = value === options[1] ? 1 : 0;
+  const activeIndex = value === options[1].value ? 1 : 0;
 
   return (
     <div className="relative flex bg-[#002B49]/5 rounded-full p-1 min-h-[44px]">
@@ -22,15 +27,15 @@ export default function ToggleSwitch({ options, value, onChange }: ToggleSwitchP
       />
       {options.map((option, i) => (
         <button
-          key={option}
+          key={option.value}
           type="button"
-          onClick={() => onChange(option)}
+          onClick={() => onChange(option.value)}
           className={`
             relative z-10 flex-1 py-2.5 text-[13px] font-bold text-center rounded-full transition-colors
             ${activeIndex === i ? "text-white" : "text-[#002B49]/60"}
           `}
         >
-          {option}
+          {option.label}
         </button>
       ))}
     </div>

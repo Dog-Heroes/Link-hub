@@ -220,32 +220,12 @@ async function seed() {
   }
   console.log(`  → ${socials.length} social links\n`);
 
-  // --- Quiz Options ---
-  console.log("🐕 Seeding quiz options...");
-  let optionCount = 0;
-
-  const quizFields: { field: string; items: { value: string; label: string }[] }[] = [
-    { field: "breed", items: quizConfig.breeds.map((b) => ({ value: b.toLowerCase(), label: b })) },
-    { field: "body_condition", items: quizConfig.bodyConditions },
-    { field: "activity_level", items: quizConfig.activityLevels },
-    { field: "hunger_level", items: quizConfig.hungerLevels },
-    { field: "diet", items: quizConfig.diets },
-    { field: "allergy", items: quizConfig.allergies.map((a) => ({ value: a.value, label: a.label })) },
-    { field: "health_issue", items: quizConfig.healthIssues.map((h) => ({ value: h.value, label: h.label })) },
-  ];
-
-  for (const { field, items } of quizFields) {
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const id = `${field}-${item.value}`;
-      await db.execute({
-        sql: 'INSERT OR REPLACE INTO quiz_options (id, field, value, label, "order") VALUES (?, ?, ?, ?, ?)',
-        args: [id, field, item.value, item.label, i],
-      });
-      optionCount++;
-    }
-  }
-  console.log(`  → ${optionCount} quiz options\n`);
+  // Note: the quiz_options table (breed/activity/diet/... lists) is no
+  // longer seeded from a local copy — the quiz widget now sources those
+  // options live from https://www.dogheroes.it/pages/quiz at request time
+  // (src/lib/quiz-options.ts, /api/quiz-options), with a same-day fallback
+  // snapshot in src/config/quiz-options-fallback.json. Keeping a second,
+  // hand-maintained copy here is exactly the drift this change removes.
 
   console.log("🎉 Seed complete!");
 }

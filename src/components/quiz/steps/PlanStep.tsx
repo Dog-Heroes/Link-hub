@@ -1,80 +1,87 @@
 "use client";
 
-import { useQuiz } from "../QuizContext";
+import { useQuiz, type DogData, type HealthData } from "../QuizContext";
+import type { QuizOptions } from "@/lib/quiz-options";
 import DogSummaryCard from "../ui/DogSummaryCard";
 import { useUTM } from "@/hooks/useUTM";
 import { appendUTM } from "@/lib/utm";
 import { trackEvent } from "@/lib/analytics";
 import quizData from "@/config/quiz.json";
 
-function mapGender(gender: string): string {
-  return gender === "Femminuccia" ? "female" : "male";
-}
-
-function mapBodyCondition(condition: string): string {
-  // Labels in widget match Shopify keys directly
-  return condition.toLowerCase();
-}
-
-function mapActivity(activity: string): string {
-  const map: Record<string, string> = {
-    Sedentario: "sedentario",
-    Attivo: "attivo",
-    "Molto attivo": "molto_attivo",
-  };
-  return map[activity] || activity.toLowerCase();
-}
-
-function mapNeutered(neutered: string): string {
-  return neutered === "Sì" ? "yes" : "no";
-}
-
-function generateBirthday(ageYears: number, ageMonths: number): string {
+/**
+ * Approximate birthday from the years/months the user picked, as "YYYY-MM"
+ * (no day — we only know an approximate age, so inventing a day-of-month
+ * would be misleading). The bridge page on the theme
+ * (Dog-Heroes/dogheroes-theme PR #302, handleBridge) accepts both
+ * "YYYY-MM" and "YYYY-MM-DD" and stores it as approximate.
+ */
+function approximateBirthday(ageYears: number, ageMonths: number): string {
   const now = new Date();
-  now.setFullYear(now.getFullYear() - ageYears);
-  now.setMonth(now.getMonth() - ageMonths);
-  return now.toISOString().split("T")[0];
+  let year = now.getFullYear() - ageYears;
+  let month = now.getMonth() + 1 - ageMonths; // 1-indexed month
+  if (month <= 0) {
+    year -= 1;
+    month += 12;
+  }
+  return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}`;
 }
 
 /**
- * Builds the bridge page URL with all dog data as query params.
- * The bridge page on Shopify will read these, write to localStorage,
- * and redirect to the quiz at the customer-data step.
+ * Builds the bridge page URL with all dog data as query params, using the
+ * EXACT same handles/values the live dogheroes.it quiz sends (see
+ * src/lib/quiz-options.ts) — every param is one of the live quiz's own
+ * option values, never a translated/guessed one, so the bridge
+ * (Dog-Heroes/dogheroes-theme PR #302) never silently discards a field.
  */
-function buildBridgeUrl(
-  dog: ReturnType<typeof useQuiz>["state"]["dog"],
-  health: ReturnType<typeof useQuiz>["state"]["health"]
-): string {
+function buildBridgeUrl(dog: DogData, health: HealthData): string {
   const params = new URLSearchParams();
 
-  params.set("name", dog.name);
+  params.set("name", dog.name.trim());
   params.set("breed", dog.breed);
-  params.set("sex", mapGender(dog.gender));
-  params.set("birthday", generateBirthday(dog.ageYears, dog.ageMonths));
+  params.set("sex", dog.gender);
+  params.set("birthday", approximateBirthday(dog.ageYears, dog.ageMonths));
   params.set("weight", dog.weight);
-  if (dog.bodyCondition) params.set("build", mapBodyCondition(dog.bodyCondition));
-  if (health.activity) params.set("activity", mapActivity(health.activity));
-  params.set("sterilization", mapNeutered(health.neutered));
+  if (dog.bodyCondition) params.set("build", dog.bodyCondition);
+  if (health.activity) params.set("activity", health.activity);
+  params.set("sterilization", health.neutered);
+  params.set("hunger", health.hunger);
 
-  if (health.diet) params.set("diet", health.diet.toLowerCase());
+  if (health.diet.length) params.set("diet", health.diet.join(","));
 
-  const allergies = health.allergies.filter((a) => a.toLowerCase() !== "nessuna");
-  if (allergies.length) params.set("allergies", allergies.join(","));
+  // "nessuna" is itself a valid handle on the site (the "no allergy"
+  // checkbox is checked by default and still submitted) — mirror that
+  // instead of omitting the param.
+  params.set(
+    "allergies",
+    health.allergies.length ? health.allergies.join(",") : "nessuna"
+  );
 
-  const diseases = health.healthIssues.filter((h) => h.toLowerCase() !== "nessuno");
-  params.set("has_diseases", diseases.length > 0 ? "yes" : "no");
-  if (diseases.length) params.set("diseases", diseases.join(","));
+  params.set("has_diseases", health.hasDiseases);
+  if (health.hasDiseases === "yes" && health.healthIssues.length) {
+    params.set("diseases", health.healthIssues.join(","));
+  }
 
   params.set("bridge", "1");
   return `${quizData.submitUrl}?${params.toString()}`;
 }
 
+function isQuizValid(dog: DogData, health: HealthData, options: QuizOptions | null): boolean {
+  if (!options) return false;
+  if (!dog.name.trim()) return false;
+  if (!dog.breed) return false;
+  if (!dog.weight || Number(dog.weight) <= 0) return false;
+  if (!health.hunger) return false;
+  if (health.diet.length === 0) return false;
+  if (health.hasDiseases === "yes" && health.healthIssues.length === 0) return false;
+  return true;
+}
+
 export default function PlanStep() {
   const { state } = useQuiz();
-  const { dog, health } = state;
+  const { dog, health, options } = state;
   const utm = useUTM();
 
-  const isValid = dog.name.trim() && dog.breed;
+  const isValid = isQuizValid(dog, health, options);
 
   function handleSubmit() {
     if (!isValid) return;
@@ -139,3 +146,5 @@ export default function PlanStep() {
     </section>
   );
 }
+
+export { buildBridgeUrl, isQuizValid, approximateBirthday };

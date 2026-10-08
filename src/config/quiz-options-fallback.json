@@ -1,0 +1,1175 @@
+{
+  "breeds": [
+    {
+      "value": "affenpinscher",
+      "label": "Affenpinscher"
+    },
+    {
+      "value": "airedale-terrier",
+      "label": "Airedale Terrier"
+    },
+    {
+      "value": "akita",
+      "label": "Akita"
+    },
+    {
+      "value": "akita-americano",
+      "label": "Akita Americano"
+    },
+    {
+      "value": "akita-inu",
+      "label": "Akita Inu"
+    },
+    {
+      "value": "alano-tedesco",
+      "label": "Alano Tedesco"
+    },
+    {
+      "value": "alaskan-malamute",
+      "label": "Alaskan Malamute"
+    },
+    {
+      "value": "alpine-dachsbracke",
+      "label": "Alpine Dachsbracke"
+    },
+    {
+      "value": "american-bulldog",
+      "label": "American Bulldog"
+    },
+    {
+      "value": "american-bully",
+      "label": "American Bully"
+    },
+    {
+      "value": "american-eskimo",
+      "label": "American Eskimo"
+    },
+    {
+      "value": "american-hairless-terrier",
+      "label": "American Hairless Terrier"
+    },
+    {
+      "value": "american-pit-bull-terrier",
+      "label": "American Pit Bull Terrier"
+    },
+    {
+      "value": "american-staffordshire-terrier",
+      "label": "American Staffordshire Terrier"
+    },
+    {
+      "value": "american-wolfdog",
+      "label": "American Wolfdog"
+    },
+    {
+      "value": "ariegeois",
+      "label": "Ariegeois"
+    },
+    {
+      "value": "australian-cattle-dog",
+      "label": "Australian Cattle Dog"
+    },
+    {
+      "value": "australian-sheperd-pastore-australiano",
+      "label": "Australian Sheperd Pastore Australiano"
+    },
+    {
+      "value": "australian-silky-terrier",
+      "label": "Australian Silky Terrier"
+    },
+    {
+      "value": "australian-terrier",
+      "label": "Australian Terrier"
+    },
+    {
+      "value": "azawakh",
+      "label": "Azawakh"
+    },
+    {
+      "value": "barbone-di-grande-mole",
+      "label": "Barbone Di Grande Mole"
+    },
+    {
+      "value": "barbone-di-media-mole",
+      "label": "Barbone Di Media Mole"
+    },
+    {
+      "value": "barbone-miniatura-barbone-toy",
+      "label": "Barbone Miniatura Barbone Toy"
+    },
+    {
+      "value": "barbone-nano",
+      "label": "Barbone Nano"
+    },
+    {
+      "value": "basenji",
+      "label": "Basenji"
+    },
+    {
+      "value": "basset-griffon-vendeen",
+      "label": "Basset Griffon Vendeen"
+    },
+    {
+      "value": "basset-griffon-venden",
+      "label": "Basset Griffon Vendéen"
+    },
+    {
+      "value": "basset-hound",
+      "label": "Basset Hound"
+    },
+    {
+      "value": "bassotto-kaninchen",
+      "label": "Bassotto Kaninchen"
+    },
+    {
+      "value": "bassotto-kaninchen-a-pelo-corto",
+      "label": "Bassotto Kaninchen A Pelo Corto"
+    },
+    {
+      "value": "bassotto-kaninchen-a-pelo-duro",
+      "label": "Bassotto Kaninchen A Pelo Duro"
+    },
+    {
+      "value": "bassotto-kaninchen-a-pelo-lungo",
+      "label": "Bassotto Kaninchen A Pelo Lungo"
+    },
+    {
+      "value": "bassotto-tedesco",
+      "label": "Bassotto Tedesco"
+    },
+    {
+      "value": "bassotto-tedesco-a-pelo-corto",
+      "label": "Bassotto Tedesco A Pelo Corto"
+    },
+    {
+      "value": "bassotto-tedesco-a-pelo-duro",
+      "label": "Bassotto Tedesco A Pelo Duro"
+    },
+    {
+      "value": "bassotto-tedesco-a-pelo-lungo",
+      "label": "Bassotto Tedesco A Pelo Lungo"
+    },
+    {
+      "value": "bassotto-tedesco-nano-a-pelo-corto",
+      "label": "Bassotto Tedesco Nano A Pelo Corto"
+    },
+    {
+      "value": "bassotto-tedesco-nano-a-pelo-duro",
+      "label": "Bassotto Tedesco Nano A Pelo Duro"
+    },
+    {
+      "value": "bassotto-tedesco-nano-a-pelo-lungo",
+      "label": "Bassotto Tedesco Nano A Pelo Lungo"
+    },
+    {
+      "value": "beagle",
+      "label": "Beagle"
+    },
+    {
+      "value": "bearded-collie",
+      "label": "Bearded Collie"
+    },
+    {
+      "value": "berger-de-la-beauce-beauceron",
+      "label": "Berger De La Beauce Beauceron"
+    },
+    {
+      "value": "berger-de-la-brie-briard",
+      "label": "Berger De La Brie Briard"
+    },
+    {
+      "value": "berger-de-picardie",
+      "label": "Berger De Picardie"
+    },
+    {
+      "value": "bichon-avanese",
+      "label": "Bichon Avanese"
+    },
+    {
+      "value": "bichon-frise",
+      "label": "Bichon Frise"
+    },
+    {
+      "value": "bichon-fris",
+      "label": "Bichon Frisé"
+    },
+    {
+      "value": "black-and-tan-toy-t",
+      "label": "Black And Tan Toy T"
+    },
+    {
+      "value": "bloodhound-chien-de-st-hubert",
+      "label": "Bloodhound Chien De St Hubert"
+    },
+    {
+      "value": "bobtail",
+      "label": "Bobtail"
+    },
+    {
+      "value": "bolognese",
+      "label": "Bolognese"
+    },
+    {
+      "value": "border-collie",
+      "label": "Border Collie"
+    },
+    {
+      "value": "border-terrier",
+      "label": "Border Terrier"
+    },
+    {
+      "value": "borzoi",
+      "label": "Borzoi"
+    },
+    {
+      "value": "boston-terrier",
+      "label": "Boston Terrier"
+    },
+    {
+      "value": "bovaro-del-bernese",
+      "label": "Bovaro Del Bernese"
+    },
+    {
+      "value": "boxer",
+      "label": "Boxer"
+    },
+    {
+      "value": "bracco-italiano",
+      "label": "Bracco Italiano"
+    },
+    {
+      "value": "bracco-ungherese-a-pelo-corto-vizsla",
+      "label": "Bracco Ungherese A Pelo Corto Vizsla"
+    },
+    {
+      "value": "bracco-ungherese-a-pelo-forte-vizsla",
+      "label": "Bracco Ungherese A Pelo Forte Vizsla"
+    },
+    {
+      "value": "briquet-griffon-vendeen",
+      "label": "Briquet Griffon Vendeen"
+    },
+    {
+      "value": "briquet-griffon-venden",
+      "label": "Briquet Griffon Vendéen"
+    },
+    {
+      "value": "bull-terrier",
+      "label": "Bull Terrier"
+    },
+    {
+      "value": "bull-terrier-miniature",
+      "label": "Bull Terrier Miniature"
+    },
+    {
+      "value": "bulldog-francese",
+      "label": "Bulldog Francese"
+    },
+    {
+      "value": "bulldog-inglese",
+      "label": "Bulldog Inglese"
+    },
+    {
+      "value": "bullmastiff",
+      "label": "Bullmastiff"
+    },
+    {
+      "value": "cairn-terrier",
+      "label": "Cairn Terrier"
+    },
+    {
+      "value": "canaan-dog",
+      "label": "Canaan Dog"
+    },
+    {
+      "value": "cane-corso",
+      "label": "Cane Corso"
+    },
+    {
+      "value": "cane-da-ferma-tedesco",
+      "label": "Cane da Ferma Tedesco"
+    },
+    {
+      "value": "cane-da-ferma-tedesco-a-pelo-corto",
+      "label": "Cane Da Ferma Tedesco A Pelo Corto"
+    },
+    {
+      "value": "cane-da-ferma-tedesco-a-pelo-duro",
+      "label": "Cane Da Ferma Tedesco A Pelo Duro"
+    },
+    {
+      "value": "cane-da-ferma-tedesco-a-pelo-ruvido",
+      "label": "Cane Da Ferma Tedesco A Pelo Ruvido"
+    },
+    {
+      "value": "cane-da-montagna-dei-pirenei",
+      "label": "Cane Da Montagna Dei Pirenei"
+    },
+    {
+      "value": "cane-da-pastore-del-caucaso",
+      "label": "Cane Da Pastore Del Caucaso"
+    },
+    {
+      "value": "cane-da-pastore-della-lessinia-e-del-lagorai",
+      "label": "Cane Da Pastore Della Lessinia E Del Lagorai"
+    },
+    {
+      "value": "cane-da-pastore-dellasia-centrale",
+      "label": "Cane Da Pastore Dellasia Centrale"
+    },
+    {
+      "value": "cane-da-pastore-di-ciarplanina",
+      "label": "Cane Da Pastore Di Ciarplanina"
+    },
+    {
+      "value": "cane-da-pastore-maremmano-abruzzese",
+      "label": "Cane Da Pastore Maremmano Abruzzese"
+    },
+    {
+      "value": "cane-da-pastore-olandese",
+      "label": "Cane Da Pastore Olandese"
+    },
+    {
+      "value": "cane-da-pastore-scozzese",
+      "label": "Cane da Pastore Scozzese"
+    },
+    {
+      "value": "cane-da-pastore-scozzese-a-pelo-corto",
+      "label": "Cane Da Pastore Scozzese A Pelo Corto"
+    },
+    {
+      "value": "cane-da-pastore-scozzese-a-pelo-lungo",
+      "label": "Cane Da Pastore Scozzese A Pelo Lungo"
+    },
+    {
+      "value": "cane-da-pastore-scozzese-shetland",
+      "label": "Cane da pastore scozzese Shetland"
+    },
+    {
+      "value": "cane-da-pastore-tedesco",
+      "label": "Cane Da Pastore Tedesco"
+    },
+    {
+      "value": "cane-di-san-bernardo",
+      "label": "Cane Di San Bernardo"
+    },
+    {
+      "value": "cane-lupo-cecoslovacco",
+      "label": "Cane Lupo Cecoslovacco"
+    },
+    {
+      "value": "cane-lupo-di-saarloos",
+      "label": "Cane Lupo Di Saarloos"
+    },
+    {
+      "value": "carlino",
+      "label": "Carlino"
+    },
+    {
+      "value": "cavalier-king-charles-spaniel",
+      "label": "Cavalier King Charles Spaniel"
+    },
+    {
+      "value": "chesapeake-bay-retriever",
+      "label": "Chesapeake Bay Retriever"
+    },
+    {
+      "value": "chihuahua",
+      "label": "Chihuahua"
+    },
+    {
+      "value": "chihuahua-a-pelo-corto",
+      "label": "Chihuahua A Pelo Corto"
+    },
+    {
+      "value": "chihuahua-a-pelo-lungo",
+      "label": "Chihuahua A Pelo Lungo"
+    },
+    {
+      "value": "chinese-crested-dog",
+      "label": "Chinese Crested Dog"
+    },
+    {
+      "value": "chow-chow",
+      "label": "Chow Chow"
+    },
+    {
+      "value": "cirneco-delletna",
+      "label": "Cirneco Delletna"
+    },
+    {
+      "value": "clumber-spaniel",
+      "label": "Clumber Spaniel"
+    },
+    {
+      "value": "cocker-spaniel-americano",
+      "label": "Cocker Spaniel Americano"
+    },
+    {
+      "value": "cocker-spaniel-inglese",
+      "label": "Cocker Spaniel Inglese"
+    },
+    {
+      "value": "coton-de-tulear",
+      "label": "Coton De Tulear"
+    },
+    {
+      "value": "coton-de-tular",
+      "label": "Coton de Tuléar"
+    },
+    {
+      "value": "curly-coated-retriever",
+      "label": "Curly Coated Retriever"
+    },
+    {
+      "value": "dalmata",
+      "label": "Dalmata"
+    },
+    {
+      "value": "deerhound",
+      "label": "Deerhound"
+    },
+    {
+      "value": "deutscher-jagd-terrier",
+      "label": "Deutscher Jagd Terrier"
+    },
+    {
+      "value": "dobermann",
+      "label": "Dobermann"
+    },
+    {
+      "value": "dogo-argentino",
+      "label": "Dogo Argentino"
+    },
+    {
+      "value": "dogue-de-bordeaux",
+      "label": "Dogue De Bordeaux"
+    },
+    {
+      "value": "epagneul-breton",
+      "label": "Epagneul Breton"
+    },
+    {
+      "value": "epagneul-francais",
+      "label": "Epagneul Francais"
+    },
+    {
+      "value": "epagneul-n-cont-papillon",
+      "label": "Epagneul N Cont Papillon"
+    },
+    {
+      "value": "epagneul-n-cont-phalene",
+      "label": "Epagneul N Cont Phalene"
+    },
+    {
+      "value": "field-spaniel",
+      "label": "Field Spaniel"
+    },
+    {
+      "value": "fila-brasileiro",
+      "label": "Fila Brasileiro"
+    },
+    {
+      "value": "flat-coated-retriever",
+      "label": "Flat Coated Retriever"
+    },
+    {
+      "value": "fox-terrier-a-pelo-liscio",
+      "label": "Fox Terrier A Pelo Liscio"
+    },
+    {
+      "value": "fox-terrier-a-pelo-ruvido",
+      "label": "Fox Terrier A Pelo Ruvido"
+    },
+    {
+      "value": "foxhound",
+      "label": "Foxhound"
+    },
+    {
+      "value": "francais-tricolore",
+      "label": "Francais Tricolore"
+    },
+    {
+      "value": "franais-tricolore",
+      "label": "Français Tricolore"
+    },
+    {
+      "value": "galgo-o-levriero-spagnolo",
+      "label": "Galgo O Levriero Spagnolo"
+    },
+    {
+      "value": "golden-retriever",
+      "label": "Golden Retriever"
+    },
+    {
+      "value": "grand-bleu-de-gascogne",
+      "label": "Grand Bleu De Gascogne"
+    },
+    {
+      "value": "grand-griffon-vendeen",
+      "label": "Grand Griffon Vendeen"
+    },
+    {
+      "value": "grand-griffon-venden",
+      "label": "Grand Griffon Vendéen"
+    },
+    {
+      "value": "grande-bovaro-vizzero",
+      "label": "Grande Bovaro Vizzero"
+    },
+    {
+      "value": "greyhound",
+      "label": "Greyhound"
+    },
+    {
+      "value": "griffoncino-belga",
+      "label": "Griffoncino Belga"
+    },
+    {
+      "value": "griffoncino-di-bruxelles",
+      "label": "Griffoncino Di Bruxelles"
+    },
+    {
+      "value": "hovawart",
+      "label": "Hovawart"
+    },
+    {
+      "value": "irish-soft-coated-wheaten-terrier",
+      "label": "Irish Soft Coated Wheaten Terrier"
+    },
+    {
+      "value": "irish-terrier",
+      "label": "Irish Terrier"
+    },
+    {
+      "value": "irish-wolfhound",
+      "label": "Irish Wolfhound"
+    },
+    {
+      "value": "jack-russel-terrier",
+      "label": "Jack Russel Terrier"
+    },
+    {
+      "value": "japanese-chin",
+      "label": "Japanese Chin"
+    },
+    {
+      "value": "kelpie-cane-da-pastore-australiano",
+      "label": "Kelpie Cane Da Pastore Australiano"
+    },
+    {
+      "value": "kerry-blu-eterrier",
+      "label": "Kerry Blu Eterrier"
+    },
+    {
+      "value": "kerry-blue-terrier",
+      "label": "Kerry Blue Terrier"
+    },
+    {
+      "value": "king-charles-spaniel",
+      "label": "King Charles Spaniel"
+    },
+    {
+      "value": "labrador-retriever",
+      "label": "Labrador Retriever"
+    },
+    {
+      "value": "lagotto-romagnolo",
+      "label": "Lagotto Romagnolo"
+    },
+    {
+      "value": "lakeland-terrier",
+      "label": "Lakeland Terrier"
+    },
+    {
+      "value": "landseer",
+      "label": "Landseer"
+    },
+    {
+      "value": "lapinkoira",
+      "label": "Lapinkoira"
+    },
+    {
+      "value": "leonberger",
+      "label": "Leonberger"
+    },
+    {
+      "value": "levriero-afgano",
+      "label": "Levriero Afgano"
+    },
+    {
+      "value": "levriero-polacco",
+      "label": "Levriero Polacco"
+    },
+    {
+      "value": "lhasa-apso",
+      "label": "Lhasa Apso"
+    },
+    {
+      "value": "magyar-agar",
+      "label": "Magyar Agar"
+    },
+    {
+      "value": "maltese",
+      "label": "Maltese"
+    },
+    {
+      "value": "manchester-terrier",
+      "label": "Manchester Terrier"
+    },
+    {
+      "value": "mastino-dei-pirenei",
+      "label": "Mastino Dei Pirenei"
+    },
+    {
+      "value": "mastino-napoletano",
+      "label": "Mastino Napoletano"
+    },
+    {
+      "value": "mastino-tibetano",
+      "label": "Mastino Tibetano"
+    },
+    {
+      "value": "meticcio",
+      "label": "Meticcio"
+    },
+    {
+      "value": "mixed",
+      "label": "Mixed"
+    },
+    {
+      "value": "n-scotia-duck-tolling-r",
+      "label": "N Scotia Duck Tolling R"
+    },
+    {
+      "value": "native-american-indian-dog",
+      "label": "Native American Indian Dog"
+    },
+    {
+      "value": "norfolk-terrier",
+      "label": "Norfolk Terrier"
+    },
+    {
+      "value": "norwich-terrier",
+      "label": "Norwich Terrier"
+    },
+    {
+      "value": "parson-jack-russel-terrier",
+      "label": "Parson Jack Russel Terrier"
+    },
+    {
+      "value": "pastore-belga-groenendael",
+      "label": "Pastore Belga Groenendael"
+    },
+    {
+      "value": "pastore-belga-laekenois",
+      "label": "Pastore Belga Laekenois"
+    },
+    {
+      "value": "pastore-belga-malinois",
+      "label": "Pastore Belga Malinois"
+    },
+    {
+      "value": "pastore-belga-tervueren",
+      "label": "Pastore Belga Tervueren"
+    },
+    {
+      "value": "pastore-bergabasco",
+      "label": "Pastore Bergabasco"
+    },
+    {
+      "value": "pastore-bergamasco",
+      "label": "Pastore Bergamasco"
+    },
+    {
+      "value": "pastore-della-sila",
+      "label": "Pastore della Sila"
+    },
+    {
+      "value": "pastore-delle-alpi-apuane",
+      "label": "Pastore Delle Alpi Apuane"
+    },
+    {
+      "value": "pastore-di-brie",
+      "label": "Pastore Di Brie"
+    },
+    {
+      "value": "pastore-di-mannara-siciliano",
+      "label": "Pastore Di Mannara Siciliano"
+    },
+    {
+      "value": "pastore-rumeno",
+      "label": "Pastore Rumeno"
+    },
+    {
+      "value": "pastore-rumeno-di-bucovina",
+      "label": "Pastore Rumeno di Bucovina"
+    },
+    {
+      "value": "pastore-sila",
+      "label": "Pastore Sila"
+    },
+    {
+      "value": "pastore-svizzero-bianco",
+      "label": "Pastore Svizzero Bianco"
+    },
+    {
+      "value": "pechinese",
+      "label": "Pechinese"
+    },
+    {
+      "value": "perro-de-agua",
+      "label": "Perro De Agua"
+    },
+    {
+      "value": "petit-basset-griffon-vendeen",
+      "label": "Petit Basset Griffon Vendeen"
+    },
+    {
+      "value": "petit-basset-griffon-venden",
+      "label": "Petit Basset Griffon Vendéen"
+    },
+    {
+      "value": "petit-bleu-da-gascogne",
+      "label": "Petit Bleu Da Gascogne"
+    },
+    {
+      "value": "piccolo-brabantino",
+      "label": "Piccolo Brabantino"
+    },
+    {
+      "value": "piccolo-cane-leone",
+      "label": "Piccolo Cane Leone"
+    },
+    {
+      "value": "piccolo-levriero-italiano",
+      "label": "Piccolo Levriero Italiano"
+    },
+    {
+      "value": "pinscher",
+      "label": "Pinscher"
+    },
+    {
+      "value": "podenco",
+      "label": "Podenco"
+    },
+    {
+      "value": "pointer-inglese",
+      "label": "Pointer Inglese"
+    },
+    {
+      "value": "pointer-tedesco",
+      "label": "Pointer Tedesco"
+    },
+    {
+      "value": "rhodesian-ridgeback",
+      "label": "Rhodesian Ridgeback"
+    },
+    {
+      "value": "romanian-mioritic",
+      "label": "Romanian Mioritic"
+    },
+    {
+      "value": "rottweiler",
+      "label": "Rottweiler"
+    },
+    {
+      "value": "saluki",
+      "label": "Saluki"
+    },
+    {
+      "value": "samoiedo",
+      "label": "Samoiedo"
+    },
+    {
+      "value": "schnauzer",
+      "label": "Schnauzer"
+    },
+    {
+      "value": "schnauzer-gigante",
+      "label": "Schnauzer Gigante"
+    },
+    {
+      "value": "schnauzer-gigante-riesenschnauzer",
+      "label": "Schnauzer Gigante Riesenschnauzer"
+    },
+    {
+      "value": "schnauzer-gigante-zwergschnauzer",
+      "label": "Schnauzer Gigante Zwergschnauzer"
+    },
+    {
+      "value": "scottish-terrier",
+      "label": "Scottish Terrier"
+    },
+    {
+      "value": "segugio-bavarese-da-montagna",
+      "label": "Segugio Bavarese da montagna"
+    },
+    {
+      "value": "segugio-italiano",
+      "label": "Segugio Italiano"
+    },
+    {
+      "value": "segugio-italiano-a-pelo-forte",
+      "label": "Segugio Italiano A Pelo Forte"
+    },
+    {
+      "value": "segugio-italiano-a-pelo-raso",
+      "label": "Segugio Italiano A Pelo Raso"
+    },
+    {
+      "value": "segugio-maremmano",
+      "label": "Segugio Maremmano"
+    },
+    {
+      "value": "segugio-polacco",
+      "label": "Segugio Polacco"
+    },
+    {
+      "value": "segugio-tedesco",
+      "label": "Segugio Tedesco"
+    },
+    {
+      "value": "setter",
+      "label": "Setter"
+    },
+    {
+      "value": "setter-gordon",
+      "label": "Setter Gordon"
+    },
+    {
+      "value": "setter-inglese",
+      "label": "Setter Inglese"
+    },
+    {
+      "value": "setter-irlandese-rosso",
+      "label": "Setter Irlandese Rosso"
+    },
+    {
+      "value": "setter-irlandese-rosso-bianco",
+      "label": "Setter Irlandese Rosso Bianco"
+    },
+    {
+      "value": "shar-pei",
+      "label": "Shar Pei"
+    },
+    {
+      "value": "shetland",
+      "label": "Shetland"
+    },
+    {
+      "value": "shiba-inu",
+      "label": "Shiba Inu"
+    },
+    {
+      "value": "shih-tzu",
+      "label": "Shih Tzu"
+    },
+    {
+      "value": "shikoku",
+      "label": "Shikoku"
+    },
+    {
+      "value": "siberian-husky",
+      "label": "Siberian Husky"
+    },
+    {
+      "value": "skye-terrier",
+      "label": "Skye terrier"
+    },
+    {
+      "value": "sloughi-levriero-arabo",
+      "label": "Sloughi Levriero Arabo"
+    },
+    {
+      "value": "spinone-italiano",
+      "label": "Spinone Italiano"
+    },
+    {
+      "value": "spitz-tedesco-nano",
+      "label": "Spitz Tedesco Nano"
+    },
+    {
+      "value": "spitz-tedesco-piccolo",
+      "label": "Spitz Tedesco Piccolo"
+    },
+    {
+      "value": "springer-spaniel-inglese",
+      "label": "Springer Spaniel Inglese"
+    },
+    {
+      "value": "staffordshire-bull-terrier",
+      "label": "Staffordshire Bull Terrier"
+    },
+    {
+      "value": "sussex-spaniel",
+      "label": "Sussex Spaniel"
+    },
+    {
+      "value": "terranova",
+      "label": "Terranova"
+    },
+    {
+      "value": "terrier-nero-russo",
+      "label": "Terrier Nero Russo"
+    },
+    {
+      "value": "tibetan-spaniel",
+      "label": "Tibetan Spaniel"
+    },
+    {
+      "value": "tibetan-terrier",
+      "label": "Tibetan Terrier"
+    },
+    {
+      "value": "tosa-inu",
+      "label": "Tosa Inu"
+    },
+    {
+      "value": "toy-russo",
+      "label": "Toy Russo"
+    },
+    {
+      "value": "tsvetnaya-bolonka",
+      "label": "Tsvetnaya Bolonka"
+    },
+    {
+      "value": "volpino-italiano",
+      "label": "Volpino Italiano"
+    },
+    {
+      "value": "volpino-pomerania",
+      "label": "Volpino Pomerania"
+    },
+    {
+      "value": "weimaraner-a-pelo-corto",
+      "label": "Weimaraner A Pelo Corto"
+    },
+    {
+      "value": "weimaraner-a-pelo-lungo",
+      "label": "Weimaraner A Pelo Lungo"
+    },
+    {
+      "value": "welsh-corgi-cardigan",
+      "label": "Welsh Corgi Cardigan"
+    },
+    {
+      "value": "welsh-corgi-pembroke",
+      "label": "Welsh Corgi Pembroke"
+    },
+    {
+      "value": "welsh-terrier",
+      "label": "Welsh Terrier"
+    },
+    {
+      "value": "west-higland-white-terrier",
+      "label": "West Higland White Terrier"
+    },
+    {
+      "value": "whippet",
+      "label": "Whippet"
+    },
+    {
+      "value": "yakutian-laika",
+      "label": "Yakutian Laika"
+    },
+    {
+      "value": "yorkshire-terrier",
+      "label": "Yorkshire Terrier"
+    },
+    {
+      "value": "zwergpinscher",
+      "label": "Zwergpinscher"
+    }
+  ],
+  "sex": [
+    {
+      "value": "male",
+      "label": "Maschio"
+    },
+    {
+      "value": "female",
+      "label": "Femmina"
+    }
+  ],
+  "sterilization": [
+    {
+      "value": "yes",
+      "label": "Sì"
+    },
+    {
+      "value": "no",
+      "label": "No"
+    }
+  ],
+  "bodyConditions": [
+    {
+      "value": "robusta",
+      "label": "Robusta",
+      "description": "Girovita non visibile ed è difficile sentire le costole"
+    },
+    {
+      "value": "magra",
+      "label": "Magra",
+      "description": "Girovita stretto e costole chiaramente visibili"
+    },
+    {
+      "value": "ideale",
+      "label": "Ideale",
+      "description": "Girovita visibile e costole percepibili al tatto"
+    }
+  ],
+  "activityLevels": [
+    {
+      "value": "sedentario",
+      "label": "Sedentario",
+      "description": "Meno di 1 ora di camminata al giorno"
+    },
+    {
+      "value": "molto-attivo",
+      "label": "Molto attivo",
+      "description": "Più di 2 ore di camminata al giorno"
+    },
+    {
+      "value": "attivo",
+      "label": "Attivo",
+      "description": "1-2 ore di camminata al giorno"
+    }
+  ],
+  "hungerLevels": [
+    {
+      "value": "ghiotto",
+      "label": "Aspirabriciole",
+      "description": "Ama qualsiasi cibo."
+    },
+    {
+      "value": "di-buon-appetito",
+      "label": "Di buon appetito",
+      "description": "Mangia quello che preferisce e volentieri."
+    },
+    {
+      "value": "molto-esigente",
+      "label": "Esigente",
+      "description": "Ha gusti molto selettivi."
+    }
+  ],
+  "diets": [
+    {
+      "value": "barf",
+      "label": "Barf"
+    },
+    {
+      "value": "umido",
+      "label": "Umida"
+    },
+    {
+      "value": "casalingo",
+      "label": "Casalinga"
+    },
+    {
+      "value": "secco",
+      "label": "Secco"
+    }
+  ],
+  "allergies": [
+    {
+      "value": "maiale",
+      "label": "Maiale"
+    },
+    {
+      "value": "pollo",
+      "label": "Pollo"
+    },
+    {
+      "value": "pesce",
+      "label": "Pesce"
+    },
+    {
+      "value": "tacchino",
+      "label": "Tacchino"
+    },
+    {
+      "value": "nessuna",
+      "label": "Nessuna",
+      "exclusive": true
+    },
+    {
+      "value": "manzo",
+      "label": "Manzo"
+    },
+    {
+      "value": "anatra",
+      "label": "Anatra"
+    },
+    {
+      "value": "coniglio",
+      "label": "Coniglio"
+    },
+    {
+      "value": "cervo",
+      "label": "Cervo"
+    },
+    {
+      "value": "ovino",
+      "label": "Ovino"
+    },
+    {
+      "value": "protein-category-wombdlqj",
+      "label": "Mucca"
+    },
+    {
+      "value": "protein-category-gwclivbw",
+      "label": "Uova"
+    }
+  ],
+  "healthIssues": [
+    {
+      "value": "problemi-ai-reni",
+      "label": "Problemi ai reni"
+    },
+    {
+      "value": "cancro",
+      "label": "Tumore"
+    },
+    {
+      "value": "artrite",
+      "label": "Artrite"
+    },
+    {
+      "value": "colite",
+      "label": "Colite"
+    },
+    {
+      "value": "malattia-del-fegato",
+      "label": "Malattia del fegato"
+    },
+    {
+      "value": "gastroenterite",
+      "label": "Gastroenterite"
+    },
+    {
+      "value": "mici",
+      "label": "MICI"
+    },
+    {
+      "value": "struvite",
+      "label": "Struvite (calcoli urinari)"
+    },
+    {
+      "value": "problemi-cardiaci",
+      "label": "Problemi cardiaci"
+    },
+    {
+      "value": "stomaco-sensibile",
+      "label": "Stomaco sensibile"
+    },
+    {
+      "value": "obesita",
+      "label": "Obesità"
+    }
+  ],
+  "weight": {
+    "min": 0,
+    "max": 200,
+    "step": 0.1
+  }
+}

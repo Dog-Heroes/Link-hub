@@ -1,17 +1,17 @@
 "use client";
 
-import { useQuiz } from "../QuizContext";
+import { useQuiz, type HealthData } from "../QuizContext";
 import FormField from "../ui/FormField";
 import ToggleSwitch from "../ui/ToggleSwitch";
 import ChipSelector from "../ui/ChipSelector";
-import quizData from "@/config/quiz.json";
 
 export default function HealthStep() {
   const { state, dispatch } = useQuiz();
-  const { health } = state;
+  const { health, options } = state;
+  const opts = options!;
 
-  function setHealth(field: string, value: string | string[]) {
-    dispatch({ type: "SET_HEALTH", field: field as keyof typeof health, value });
+  function setHealth<K extends keyof HealthData>(field: K, value: HealthData[K]) {
+    dispatch({ type: "SET_HEALTH", field, value });
   }
 
   return (
@@ -23,7 +23,7 @@ export default function HealthStep() {
       {/* Sterilizzato */}
       <FormField label="È sterilizzato/a?">
         <ToggleSwitch
-          options={["Sì", "No"]}
+          options={[opts.sterilization[0], opts.sterilization[1]]}
           value={health.neutered}
           onChange={(v) => setHealth("neutered", v)}
         />
@@ -32,15 +32,15 @@ export default function HealthStep() {
       {/* Livello attivita */}
       <FormField label="Livello di attività" htmlFor="activity">
         <div className="flex gap-2 flex-wrap">
-          {quizData.activityLevels.map((al) => (
+          {opts.activityLevels.map((al) => (
             <button
               key={al.value}
               type="button"
-              onClick={() => setHealth("activity", al.label)}
+              onClick={() => setHealth("activity", al.value)}
               className={`
                 flex-1 min-w-[calc(50%-4px)] py-3 rounded-xl text-[13px] font-bold transition-colors min-h-[44px]
                 ${
-                  health.activity === al.label
+                  health.activity === al.value
                     ? "bg-[#E1251B] text-white border-2 border-[#E1251B]"
                     : "bg-white text-[#002B49] border-2 border-[#002B49]/10 hover:border-[#E1251B]/30"
                 }
@@ -55,15 +55,15 @@ export default function HealthStep() {
       {/* Appetito */}
       <FormField label="Come definiresti il suo appetito?">
         <div className="flex gap-2 flex-wrap">
-          {quizData.hungerLevels.map((hl) => (
+          {opts.hungerLevels.map((hl) => (
             <button
               key={hl.value}
               type="button"
-              onClick={() => setHealth("hunger", hl.label)}
+              onClick={() => setHealth("hunger", hl.value)}
               className={`
                 flex-1 min-w-[calc(50%-4px)] py-3 rounded-xl text-[13px] font-bold transition-colors min-h-[44px]
                 ${
-                  health.hunger === hl.label
+                  health.hunger === hl.value
                     ? "bg-[#E1251B] text-white border-2 border-[#E1251B]"
                     : "bg-white text-[#002B49] border-2 border-[#002B49]/10 hover:border-[#E1251B]/30"
                 }
@@ -75,40 +75,48 @@ export default function HealthStep() {
         </div>
       </FormField>
 
-      {/* Dieta attuale */}
-      <FormField label="Dieta attuale" htmlFor="diet">
-        <select
-          id="diet"
-          value={health.diet}
-          onChange={(e) => setHealth("diet", e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] text-[#002B49] focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px] bg-white"
-        >
-          <option value="">Seleziona...</option>
-          {quizData.diets.map((d) => (
-            <option key={d.value} value={d.label}>
-              {d.label}
-            </option>
-          ))}
-        </select>
+      {/* Dieta attuale — multi-selezione, come sul sito (quiz[][diet][]) */}
+      <FormField label="Che tipo di alimentazione sta seguendo?">
+        <ChipSelector
+          options={opts.diets}
+          selected={health.diet}
+          onChange={(v) => setHealth("diet", v)}
+        />
       </FormField>
 
       {/* Allergie */}
       <FormField label="Allergie o intolleranze">
         <ChipSelector
-          options={quizData.allergies}
+          options={opts.allergies}
           selected={health.allergies}
           onChange={(v) => setHealth("allergies", v)}
         />
       </FormField>
 
-      {/* Problemi di salute */}
-      <FormField label="Problemi di salute">
-        <ChipSelector
-          options={quizData.healthIssues}
-          selected={health.healthIssues}
-          onChange={(v) => setHealth("healthIssues", v)}
+      {/* Esigenze di salute */}
+      <FormField label="Ha esigenze di salute?">
+        <ToggleSwitch
+          options={[
+            { value: "no", label: "No" },
+            { value: "yes", label: "Sì" },
+          ]}
+          value={health.hasDiseases}
+          onChange={(v) => {
+            setHealth("hasDiseases", v);
+            if (v === "no") setHealth("healthIssues", []);
+          }}
         />
       </FormField>
+
+      {health.hasDiseases === "yes" && (
+        <FormField label="Quali?">
+          <ChipSelector
+            options={opts.healthIssues}
+            selected={health.healthIssues}
+            onChange={(v) => setHealth("healthIssues", v)}
+          />
+        </FormField>
+      )}
     </section>
   );
 }
