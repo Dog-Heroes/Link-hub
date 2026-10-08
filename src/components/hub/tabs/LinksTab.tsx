@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUTM } from "@/hooks/useUTM";
 import { appendUTM, isSiteUrl } from "@/lib/utm";
@@ -195,14 +195,287 @@ function CollapsibleSection({
 }
 
 /* ------------------------------------------------------------------ */
-/*  YouTube ID extractor                                               */
+/*  Video detection (YouTube + direct video files)                     */
 /* ------------------------------------------------------------------ */
 
 function extractYouTubeId(url: string): string | null {
   const m = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/
   );
   return m ? m[1] : null;
+}
+
+/** True for a URL that is a YouTube watch/short/embed link (any `youtube*` host or `youtu.be`). */
+function isYouTubeUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return /youtu\.be\/|youtube(?:-nocookie)?\.com\//i.test(url);
+}
+
+/** True for a YouTube Shorts URL (used to pick the 9:16 aspect ratio). */
+function isYouTubeShortsUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return /youtube(?:-nocookie)?\.com\/shorts\//i.test(url);
+}
+
+/** True for a URL that points directly at a video file (.mp4/.webm/.mov/.ogg), query string allowed. */
+function isDirectVideoUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i.test(url);
+}
+
+/**
+ * A link is rendered as an inline video when it's explicitly typed as such
+ * (`link_type` "youtube" or "video" — the latter future-proofing for the
+ * admin), or when its URL/media_url is recognisably a YouTube link or a
+ * direct video file. This lets a plain "classic" link whose URL is a
+ * YouTube link or a Shopify CDN .mp4 become a video automatically, with no
+ * DB change required.
+ */
+function isVideoLink(link: LinkData): boolean {
+  return (
+    link.link_type === "youtube" ||
+    link.link_type === "video" ||
+    isYouTubeUrl(link.url) ||
+    isYouTubeUrl(link.media_url) ||
+    isDirectVideoUrl(link.url) ||
+    isDirectVideoUrl(link.media_url)
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  In-viewport hook — lazy mount + play/pause on scroll                */
+/* ------------------------------------------------------------------ */
+
+function useInView<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  // No IntersectionObserver support (very old browsers): fall back to
+  // "always visible" from the start rather than never, computed once at
+  // mount time (not as a setState inside the effect below).
+  const noIOSupport =
+    typeof window !== "undefined" && typeof IntersectionObserver === "undefined";
+  const [inView, setInView] = useState(noIOSupport);
+  const [hasEntered, setHasEntered] = useState(noIOSupport);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (entry.isIntersecting) setHasEntered(true);
+      },
+      { threshold: 0.4, rootMargin: "100px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, inView, hasEntered };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Audio icons                                                        */
+/* ------------------------------------------------------------------ */
+
+function SpeakerOnIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 010 7.07" />
+      <path d="M18.07 5.93a9 9 0 010 12.73" />
+    </svg>
+  );
+}
+
+function SpeakerOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
+  );
+}
+
+function PlayBadgeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Video card — native <video> for direct files, YouTube iframe       */
+/*  otherwise. Autoplay muted loop, no native controls, overlay        */
+/*  audio toggle, lazy-mounted and play/paused via IntersectionObserver */
+/* ------------------------------------------------------------------ */
+
+function VideoCard({
+  link,
+  href,
+  onClick,
+}: {
+  link: LinkData;
+  href: string;
+  onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  const { ref, inView, hasEntered } = useInView<HTMLDivElement>();
+  const [muted, setMuted] = useState(true);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  const youtubeId = isYouTubeUrl(link.media_url)
+    ? extractYouTubeId(link.media_url!)
+    : isYouTubeUrl(link.url)
+      ? extractYouTubeId(link.url)
+      : null;
+
+  // Native video wins when there's a direct video file to play; YouTube is
+  // the fallback for "youtube"-typed / YouTube-URL links.
+  const directVideoUrl = isDirectVideoUrl(link.media_url)
+    ? link.media_url
+    : isDirectVideoUrl(link.url)
+      ? link.url
+      : null;
+
+  // Optional poster: media_url, when it isn't itself the video source (e.g.
+  // a thumbnail image URL set alongside a .mp4 `url`).
+  const posterUrl =
+    link.media_url && link.media_url !== directVideoUrl && !isDirectVideoUrl(link.media_url)
+      ? link.media_url
+      : undefined;
+
+  const isShorts = isYouTubeShortsUrl(link.media_url) || isYouTubeShortsUrl(link.url);
+  const [aspectRatio, setAspectRatio] = useState<string>(isShorts ? "9 / 16" : "16 / 9");
+
+  // Play/pause the native <video> as it enters/leaves the viewport.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !directVideoUrl) return;
+    if (inView) {
+      v.play().catch(() => {
+        /* autoplay can be rejected by the browser — the video simply stays paused */
+      });
+    } else {
+      v.pause();
+    }
+  }, [inView, hasEntered, directVideoUrl]);
+
+  // Drive the YouTube player via postMessage (requires enablejsapi=1).
+  function sendYouTubeCommand(func: string) {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func, args: [] }),
+      "*"
+    );
+  }
+
+  useEffect(() => {
+    if (!youtubeId || !hasEntered) return;
+    sendYouTubeCommand(inView ? "playVideo" : "pauseVideo");
+  }, [inView, hasEntered, youtubeId]);
+
+  function toggleMute(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !muted;
+    setMuted(next);
+
+    if (directVideoUrl && videoRef.current) {
+      videoRef.current.muted = next;
+    } else if (youtubeId) {
+      sendYouTubeCommand(next ? "mute" : "unMute");
+    }
+
+    if (!next) {
+      // Reuse the existing click-tracking pipeline, tagged with the link id.
+      trackEvent("video_audio_on", { link_id: link.id });
+    }
+  }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const youtubeSrc = youtubeId
+    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(origin)}`
+    : null;
+
+  return (
+    <div className="rounded-2xl overflow-hidden border-2 border-[#002B49]/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      <div
+        ref={ref}
+        className="relative w-full bg-black"
+        style={{ aspectRatio }}
+      >
+        {hasEntered && directVideoUrl && (
+          <video
+            ref={videoRef}
+            src={directVideoUrl}
+            poster={posterUrl}
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              if (v.videoWidth > 0 && v.videoHeight > 0) {
+                setAspectRatio(`${v.videoWidth} / ${v.videoHeight}`);
+              }
+            }}
+          />
+        )}
+
+        {hasEntered && !directVideoUrl && youtubeSrc && (
+          <iframe
+            ref={iframeRef}
+            src={youtubeSrc}
+            className="absolute inset-0 w-full h-full"
+            style={{ border: 0 }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            title={link.label}
+          />
+        )}
+
+        {hasEntered && (directVideoUrl || youtubeSrc) && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={muted ? "Attiva audio" : "Disattiva audio"}
+            aria-pressed={!muted}
+            className="
+              absolute bottom-2.5 right-2.5 z-10
+              w-9 h-9 rounded-full
+              bg-black/55 hover:bg-black/70 text-white
+              flex items-center justify-center
+              backdrop-blur-sm transition-colors
+            "
+          >
+            {muted ? <SpeakerOffIcon /> : <SpeakerOnIcon />}
+          </button>
+        )}
+      </div>
+
+      <a
+        href={href}
+        onClick={onClick}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+      >
+        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+          {youtubeId ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.67 31.67 0 000 12a31.67 31.67 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.67 31.67 0 0024 12a31.67 31.67 0 00-.5-5.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+          ) : (
+            <PlayBadgeIcon />
+          )}
+        </span>
+        <span className="flex-1 text-[13px] font-semibold text-[#002B49]">
+          {link.label}
+        </span>
+      </a>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -240,38 +513,9 @@ function LinkCard({
     });
   }
 
-  // --- YouTube embed ---
-  if (link.link_type === "youtube") {
-    const videoId = extractYouTubeId(link.media_url || link.url);
-    return (
-      <div className="rounded-2xl overflow-hidden border-2 border-[#002B49]/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-        {videoId && (
-          <div className="relative w-full aspect-video bg-black">
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}?rel=0`}
-              className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={link.label}
-            />
-          </div>
-        )}
-        <a
-          href={href}
-          onClick={handleClick}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
-        >
-          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.67 31.67 0 000 12a31.67 31.67 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.67 31.67 0 0024 12a31.67 31.67 0 00-.5-5.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
-          </span>
-          <span className="flex-1 text-[13px] font-semibold text-[#002B49]">
-            {link.label}
-          </span>
-        </a>
-      </div>
-    );
+  // --- Video (YouTube embed or direct video file, e.g. cdn.shopify.com/videos/...) ---
+  if (isVideoLink(link)) {
+    return <VideoCard link={link} href={href} onClick={handleClick} />;
   }
 
   // --- Featured (big image + text below) ---
@@ -365,9 +609,20 @@ function LinkCard({
         shadow-[0_2px_8px_rgba(0,0,0,0.04)]
       "
     >
-      <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#E1251B]/8 flex items-center justify-center text-[#E1251B]">
-        <LinkIcon name={link.icon} />
-      </span>
+      {link.media_url ? (
+        <span className="flex-shrink-0 w-10 h-10 rounded-xl overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={link.media_url}
+            alt={link.label}
+            className="w-full h-full object-cover"
+          />
+        </span>
+      ) : (
+        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#E1251B]/8 flex items-center justify-center text-[#E1251B]">
+          <LinkIcon name={link.icon} />
+        </span>
+      )}
 
       <span className="flex-1 text-[14px] font-bold text-[#002B49]">
         {link.label}
