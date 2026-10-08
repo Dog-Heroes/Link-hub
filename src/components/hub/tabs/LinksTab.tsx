@@ -67,6 +67,9 @@ function internalTabId(url: string): string | null {
 /*  Hero CTA                                                           */
 /* ------------------------------------------------------------------ */
 
+/** Real id of the "Hero CTA" section in the `sections` table (type `cta`). */
+const HERO_CTA_SECTION_ID = "hero-cta";
+
 function HeroCTAButton({
   utm,
   sections,
@@ -78,8 +81,8 @@ function HeroCTAButton({
   links: LinkData[];
   onNavigateTab?: (tabId: string) => void;
 }) {
-  // Hero CTA is the first link in the "hero_cta" section, or the first section's first link
-  const heroSection = sections.find((s) => s.id === "hero_cta");
+  // Hero CTA is the first link in the dedicated "hero-cta" section
+  const heroSection = sections.find((s) => s.id === HERO_CTA_SECTION_ID);
   const heroLink = heroSection
     ? links.find((l) => l.section_id === heroSection.id)
     : null;
@@ -98,7 +101,7 @@ function HeroCTAButton({
       onNavigateTab?.(tabId);
     }
     trackEvent("link_hub_click", {
-      link_id: "hero_cta",
+      link_id: heroLink!.id,
       label: heroLink!.label,
       url: heroLink!.url,
     });
@@ -414,8 +417,8 @@ export default function LinksTab({
 }) {
   const utm = useUTM();
 
-  // Separate hero_cta section from regular sections
-  const regularSections = sections.filter((s) => s.id !== "hero_cta");
+  // Separate the Hero CTA section (rendered by HeroCTAButton) from regular sections
+  const regularSections = sections.filter((s) => s.id !== HERO_CTA_SECTION_ID);
 
   return (
     <div className="px-4 pt-5 flex flex-col gap-4">
