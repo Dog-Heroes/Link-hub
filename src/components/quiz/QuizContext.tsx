@@ -43,19 +43,23 @@ export interface HealthData {
 }
 
 /**
- * Optional contact details, entered on the hub's own final step. NEVER
- * persisted here or sent to the hub's own analytics/DB — they only ever
- * leave the browser inside the bridge URL's fragment (c_name/c_email/
- * c_phone/c_zip, see PlanStep.tsx buildBridgeUrl), never in the query
- * string, so they can't end up in logs, GA4 or a referrer header. The site
- * still collects the marketing/privacy consent itself; the hub never
- * simulates it.
+ * Contact details + consent, entered on the hub's own final step. Required
+ * to reach the bridge (decision of 08/10/2026: the hub now sends the user
+ * straight to the site's recipe page with their data already filled in).
+ * NEVER persisted here or sent to the hub's own analytics/DB — they only
+ * ever leave the browser inside the bridge URL's fragment (c_name/c_email/
+ * c_phone/c_zip/c_consent, see PlanStep.tsx buildBridgeUrl), never in the
+ * query string, so they can't end up in logs, GA4 or a referrer header.
  */
 export interface CustomerData {
   name: string;
   email: string;
   phone: string;
   zip: string;
+  /** Same consent checkbox as the site's own customer-data step (privacy
+   * policy + terms of service) — must be explicitly checked, never
+   * pre-ticked. */
+  consent: boolean;
 }
 
 export interface QuizState {
@@ -108,6 +112,7 @@ const initialState: QuizState = {
     email: "",
     phone: "",
     zip: "",
+    consent: false, // never pre-ticked
   },
   currentSection: 1,
   options: null,

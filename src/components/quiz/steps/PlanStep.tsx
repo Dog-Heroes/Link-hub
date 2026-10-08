@@ -5,9 +5,19 @@ import type { QuizOptions } from "@/lib/quiz-options";
 import DogSummaryCard from "../ui/DogSummaryCard";
 import FormField from "../ui/FormField";
 import { useUTM } from "@/hooks/useUTM";
-import { appendUTM } from "@/lib/utm";
+import { appendUTM, isSiteUrl } from "@/lib/utm";
 import { trackEvent } from "@/lib/analytics";
 import quizData from "@/config/quiz.json";
+
+/**
+ * Same consent links as the site's own customer-data step on
+ * dogheroes.it/pages/quiz (verified live, 08/10/2026) — same hrefs, same
+ * order, opened in a new tab. Stamped with the hub's fixed UTM like every
+ * other outbound link to the site (isSiteUrl + appendUTM, see
+ * src/components/hub/tabs/LinksTab.tsx).
+ */
+const PRIVACY_POLICY_URL = "https://www.dogheroes.it/policies/privacy-policy";
+const TERMS_OF_SERVICE_URL = "https://www.dogheroes.it/policies/terms-of-service";
 
 /**
  * Approximate birthday from the years/months the user picked, as "YYYY-MM"
@@ -28,15 +38,17 @@ function approximateBirthday(ageYears: number, ageMonths: number): string {
 }
 
 /**
- * Builds the URL fragment (never the query string) carrying the optional
- * contact details from the hub's own final step — c_name/c_email/c_phone/
- * c_zip, URLSearchParams-encoded. Fixed contract with the bridge
- * (Dog-Heroes/dogheroes-theme PR #302, implemented there in parallel): PII
- * only ever travels in the fragment, which browsers never send to the
- * server, never log, and never forward as a referrer — unlike the query
- * string, which GA4/server logs/the discount-redirect hop on Shopify can
- * all see. Every field is optional: an empty/invalid one is simply left
- * out, it never blocks the quiz CTA (see isQuizValid, unaffected by this).
+ * Builds the URL fragment (never the query string) carrying the contact
+ * details + consent from the hub's own final step — c_name/c_email/
+ * c_phone/c_zip/c_consent, URLSearchParams-encoded. Fixed contract with the
+ * bridge (Dog-Heroes/dogheroes-theme PR #302, updated there in parallel for
+ * the 08/10/2026 decision): PII only ever travels in the fragment, which
+ * browsers never send to the server, never log, and never forward as a
+ * referrer — unlike the query string, which GA4/server logs/the
+ * discount-redirect hop on Shopify can all see. These fields are now
+ * required (see getMissingFields), so in practice the fragment is always
+ * built once the CTA is enabled — but each value is still guarded
+ * individually here, same as before.
  */
 function buildCustomerFragment(customer: CustomerData): string {
   const params = new URLSearchParams();
@@ -52,6 +64,9 @@ function buildCustomerFragment(customer: CustomerData): string {
   if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) params.set("c_email", email);
   if (phone) params.set("c_phone", phone);
   if (zip) params.set("c_zip", zip);
+  // Only ever set when the checkbox is actually ticked — never defaulted,
+  // and never present at all otherwise (not even "c_consent=0").
+  if (customer.consent) params.set("c_consent", "1");
 
   return params.toString();
 }
@@ -113,6 +128,14 @@ function buildBridgeUrl(dog: DogData, health: HealthData, customer: CustomerData
   return fragment ? `${quizData.submitUrl}?${query}#${fragment}` : `${quizData.submitUrl}?${query}`;
 }
 
+/** Email check mirrored from buildCustomerFragment's own sanity check. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Phone: digits only, like the site's own field (which shows a fixed +39
+ * prefix next to a digits-only national number input). */
+const PHONE_RE = /^[0-9]{6,}$/;
+/** CAP: exactly 5 digits, like the site. */
+const ZIP_RE = /^[0-9]{5}$/;
+
 /**
  * Required fields, aligned 1:1 with what the live quiz on dogheroes.it
  * itself requires (verified live, 08/10/2026 — each one blocks "Prosegui"
@@ -124,14 +147,33 @@ function buildBridgeUrl(dog: DogData, health: HealthData, customer: CustomerData
  * condition "ideale", activity "attivo", allergies "nessuna", has_diseases
  * "no" — are intentionally NOT required here either: the hub mirrors the
  * same defaults, so leaving them untouched is the same as on the site.
+ *
+ * Since the 08/10/2026 decision (the hub now sends the user straight to
+ * dogheroes.it/pages/recipes, data and consent already filled in), the
+ * customer-data step is ALSO required, with the same rules as the site's
+ * own customer-data step: name, a valid email, a digits-only phone, a
+ * 5-digit CAP, and the consent checkbox — see EMAIL_RE/PHONE_RE/ZIP_RE and
+ * the consent checkbox below.
  */
-function isQuizValid(dog: DogData, health: HealthData, options: QuizOptions | null): boolean {
-  return getMissingFields(dog, health, options).length === 0;
+function isQuizValid(
+  dog: DogData,
+  health: HealthData,
+  customer: CustomerData,
+  options: QuizOptions | null
+): boolean {
+  return getMissingFields(dog, health, customer, options).length === 0;
 }
 
 /** Italian labels for whatever required field above is still missing — shown
- * near the CTA so a disabled button always says why. */
-function getMissingFields(dog: DogData, health: HealthData, options: QuizOptions | null): string[] {
+ * near the CTA so a disabled button always says why. Covers both the dog
+ * quiz itself and (since 08/10/2026) the customer-data step: name, a valid
+ * email, a digits-only phone, a 5-digit CAP, and the consent checkbox. */
+function getMissingFields(
+  dog: DogData,
+  health: HealthData,
+  customer: CustomerData,
+  options: QuizOptions | null
+): string[] {
   if (!options) return [];
   const missing: string[] = [];
   if (!dog.name.trim()) missing.push("Nome");
@@ -143,6 +185,11 @@ function getMissingFields(dog: DogData, health: HealthData, options: QuizOptions
   if (!health.hunger) missing.push("Appetito");
   if (health.diet.length === 0) missing.push("Dieta");
   if (health.hasDiseases === "yes" && health.healthIssues.length === 0) missing.push("Patologie");
+  if (!customer.name.trim()) missing.push("Nome e cognome");
+  if (!EMAIL_RE.test(customer.email.trim())) missing.push("Email");
+  if (!PHONE_RE.test(customer.phone.trim())) missing.push("Telefono");
+  if (!ZIP_RE.test(customer.zip.trim())) missing.push("CAP");
+  if (!customer.consent) missing.push("Consenso");
   return missing;
 }
 
@@ -151,8 +198,10 @@ export default function PlanStep() {
   const { dog, health, customer, options } = state;
   const utm = useUTM();
 
-  const missingFields = getMissingFields(dog, health, options);
+  const missingFields = getMissingFields(dog, health, customer, options);
   const isValid = missingFields.length === 0;
+  const policyHref = isSiteUrl(PRIVACY_POLICY_URL) ? appendUTM(PRIVACY_POLICY_URL, utm) : PRIVACY_POLICY_URL;
+  const termsHref = isSiteUrl(TERMS_OF_SERVICE_URL) ? appendUTM(TERMS_OF_SERVICE_URL, utm) : TERMS_OF_SERVICE_URL;
 
   function setCustomer<K extends keyof CustomerData>(field: K, value: CustomerData[K]) {
     dispatch({ type: "SET_CUSTOMER", field, value });
@@ -203,15 +252,16 @@ export default function PlanStep() {
         </p>
       </div>
 
-      {/* Dati di contatto — facoltativi: NON raccolgono il consenso
-          marketing/privacy (lo dà l'utente sul sito), e NON vengono salvati
-          nel DB del hub né inviati al suo analytics (trackEvent sopra non
-          li include). Se compilati, viaggiano SOLO nel fragment dell'URL
-          del bridge (buildBridgeUrl → buildCustomerFragment), mai nella
-          query string. */}
+      {/* Dati di contatto — OBBLIGATORI dal 08/10/2026 (decisione di Marco):
+          chi completa il quiz con tutti i dati e il consenso arriva
+          direttamente su dogheroes.it/pages/recipes. NON vengono salvati nel
+          DB del hub né inviati al suo analytics (trackEvent sopra non li
+          include): viaggiano SOLO nel fragment dell'URL del bridge
+          (buildBridgeUrl → buildCustomerFragment), mai nella query
+          string. */}
       <div className="flex flex-col gap-4">
         <h3 className="text-[12px] font-extrabold uppercase tracking-[0.15em] text-[#002B49]/40">
-          I tuoi dati (facoltativo)
+          I tuoi dati
         </h3>
 
         <FormField label="Nome e cognome" htmlFor="customer-name">
@@ -242,16 +292,21 @@ export default function PlanStep() {
         <div className="flex gap-3">
           <div className="flex-[3]">
             <FormField label="Telefono" htmlFor="customer-phone">
-              <input
-                id="customer-phone"
-                type="tel"
-                autoComplete="tel"
-                inputMode="tel"
-                value={customer.phone}
-                onChange={(e) => setCustomer("phone", e.target.value)}
-                placeholder="333 1234567"
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#002B49]/10 text-[14px] text-[#002B49] placeholder:text-[#002B49]/30 focus:border-[#E1251B]/50 focus:outline-none transition-colors min-h-[44px]"
-              />
+              <div className="flex items-center rounded-xl border-2 border-[#002B49]/10 focus-within:border-[#E1251B]/50 transition-colors">
+                <span className="pl-4 pr-2 py-3 text-[14px] text-[#002B49]/50 select-none">
+                  +39
+                </span>
+                <input
+                  id="customer-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="numeric"
+                  value={customer.phone}
+                  onChange={(e) => setCustomer("phone", e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="3331234567"
+                  className="w-full pr-4 py-3 bg-transparent text-[14px] text-[#002B49] placeholder:text-[#002B49]/30 focus:outline-none min-h-[44px]"
+                />
+              </div>
             </FormField>
           </div>
           <div className="flex-[2]">
@@ -271,9 +326,41 @@ export default function PlanStep() {
           </div>
         </div>
 
-        <p className="text-[11px] text-[#002B49]/50 leading-relaxed">
-          Confermerai i dati e il consenso sul sito Dog Heroes.
-        </p>
+        {/* Stesso testo e stessi link della checkbox di consenso del sito
+            (step dati cliente, dogheroes.it/pages/quiz, verificato live
+            08/10/2026) — mai prespuntata. */}
+        <label htmlFor="customer-consent" className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="customer-consent"
+            type="checkbox"
+            checked={customer.consent}
+            onChange={(e) => setCustomer("consent", e.target.checked)}
+            className="mt-0.5 w-5 h-5 flex-shrink-0 rounded border-2 border-[#002B49]/20 text-[#E1251B] focus:ring-[#E1251B]/50 cursor-pointer"
+          />
+          <span className="text-[12px] text-[#002B49]/70 leading-relaxed">
+            Dichiaro di essere maggiorenne e di aver letto ed accettato la{" "}
+            <a
+              href={policyHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="underline text-[#002B49] font-semibold"
+            >
+              privacy policy
+            </a>{" "}
+            e le{" "}
+            <a
+              href={termsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="underline text-[#002B49] font-semibold"
+            >
+              condizioni generali di servizio
+            </a>
+            .
+          </span>
+        </label>
       </div>
 
       {/* CTA */}
@@ -292,7 +379,7 @@ export default function PlanStep() {
           }
         `}
       >
-        Scopri le ricette per {dog.name || "il tuo cane"}
+        Vedi il piano di {dog.name || "il tuo cane"}
       </button>
 
       {!isValid && missingFields.length > 0 && (

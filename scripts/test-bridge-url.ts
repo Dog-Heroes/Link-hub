@@ -70,17 +70,20 @@ async function main() {
     healthIssues: [healthIssue.value],
   };
 
-  assert(isQuizValid(dog, health, options), "sample dog passes the hub's own required-field check");
-
-  // Sample customer data (dati finti) — the optional final step of the
-  // mini quiz. These must NEVER leak into the query string: only into the
-  // URL fragment (see buildCustomerFragment in PlanStep.tsx).
+  // Sample customer data (dati finti) — the now-mandatory final step of the
+  // mini quiz (decision of 08/10/2026: name/email/phone/CAP + consent are
+  // required for the CTA, same rules as the site's own customer-data
+  // step). These must NEVER leak into the query string: only into the URL
+  // fragment (see buildCustomerFragment in PlanStep.tsx).
   const customer: CustomerData = {
     name: "Maria Rossi",
     email: "maria.rossi@example.com",
-    phone: "333 1234567",
+    phone: "3331234567",
     zip: "20100",
+    consent: true,
   };
+
+  assert(isQuizValid(dog, health, customer, options), "sample dog + customer passes the hub's own required-field check");
 
   const url = buildBridgeUrl(dog, health, customer);
   console.log(`\nSample bridge URL:\n${url}\n`);
@@ -91,42 +94,47 @@ async function main() {
   assert(url.includes("#"), "bridge URL carries a fragment when customer data is filled in");
   assert(!!fragment, "fragment is non-empty when customer data is filled in");
 
-  // PII must NEVER be in the query string — only in the fragment.
-  for (const piiKey of ["c_name", "c_email", "c_phone", "c_zip", "name_customer"]) {
+  // PII and consent must NEVER be in the query string — only in the fragment.
+  for (const piiKey of ["c_name", "c_email", "c_phone", "c_zip", "c_consent", "name_customer"]) {
     assert(!params.has(piiKey), `query string never carries ${piiKey}`);
   }
   assert(!urlWithoutFragment.includes(encodeURIComponent(customer.email)), "query string never contains the customer email");
   assert(!urlWithoutFragment.includes(encodeURIComponent(customer.phone.replace(/\s/g, "+"))), "query string never contains the customer phone");
 
   // The fragment itself, built with URLSearchParams, carries exactly the
-  // four contact fields the contract with the bridge (dogheroes-theme PR
-  // #302) defines — c_name/c_email/c_phone/c_zip.
+  // five contact/consent fields the contract with the bridge
+  // (dogheroes-theme PR #302) defines — c_name/c_email/c_phone/c_zip/c_consent.
   const fragmentParams = new URLSearchParams(fragment);
   assert(fragmentParams.get("c_name") === customer.name, "c_name is in the fragment, unmodified");
   assert(fragmentParams.get("c_email") === customer.email, "c_email is in the fragment, unmodified");
   assert(fragmentParams.get("c_phone") === customer.phone, "c_phone is in the fragment, unmodified");
   assert(fragmentParams.get("c_zip") === customer.zip, "c_zip is in the fragment, unmodified");
+  assert(fragmentParams.get("c_consent") === "1", "c_consent=1 is in the fragment when the checkbox is ticked");
 
   // Dog's own name param ("name") stays in the query string (it's a
   // required field of the dog quiz itself, not a customer field) and is
   // unaffected by the customer fragment.
   assert(params.get("name") === "Fido", "dog's own 'name' query param is untouched by the customer fragment");
 
-  // Empty/partial customer data: no fragment at all, nothing optional
-  // blocks the quiz CTA.
-  const emptyCustomer: CustomerData = { name: "", email: "", phone: "", zip: "" };
+  // buildCustomerFragment itself still builds the fragment field-by-field
+  // (required-field enforcement lives in getMissingFields/isQuizValid, used
+  // by the CTA — not here): empty customer data -> no fragment at all.
+  const emptyCustomer: CustomerData = { name: "", email: "", phone: "", zip: "", consent: false };
   const urlNoCustomer = buildBridgeUrl(dog, health, emptyCustomer);
   assert(!urlNoCustomer.includes("#"), "no customer data filled in -> no fragment at all");
+  assert(!isQuizValid(dog, health, emptyCustomer, options), "empty customer data fails the required-field check");
 
-  // An invalid email is dropped rather than sent through; the other three
-  // optional fields are unaffected.
-  const partialCustomer: CustomerData = { name: "Maria Rossi", email: "not-an-email", phone: "", zip: "20100" };
+  // An invalid email is dropped rather than sent through; the other fields
+  // are unaffected. consent is still false here -> no c_consent at all.
+  const partialCustomer: CustomerData = { name: "Maria Rossi", email: "not-an-email", phone: "", zip: "20100", consent: false };
   const partialFragment = buildCustomerFragment(partialCustomer);
   const partialParams = new URLSearchParams(partialFragment);
   assert(partialParams.get("c_name") === "Maria Rossi", "c_name is kept even when other fields are empty/invalid");
   assert(!partialParams.has("c_email"), "an obviously invalid email is dropped from the fragment");
   assert(!partialParams.has("c_phone"), "an empty phone is omitted from the fragment");
   assert(partialParams.get("c_zip") === "20100", "c_zip is kept");
+  assert(!partialParams.has("c_consent"), "c_consent is never present (not even 0) when the checkbox is unticked");
+  assert(!isQuizValid(dog, health, partialCustomer, options), "partial/unticked customer data fails the required-field check");
 
   assert(url.startsWith("https://www.dogheroes.it/pages/quiz?"), "submitUrl points at dogheroes.it, not the myshopify domain");
   assert(params.get("bridge") === "1", "bridge=1 is set");
@@ -201,13 +209,13 @@ async function main() {
   assert(unknownSUtm.utm_campaign === undefined, "an unmapped ?s= value sets no utm_campaign");
 
   // A dog missing a required field (no breed selected) must stay invalid.
-  assert(!isQuizValid({ ...dog, breed: "" }, health, options), "quiz without a breed is rejected by isQuizValid");
+  assert(!isQuizValid({ ...dog, breed: "" }, health, customer, options), "quiz without a breed is rejected by isQuizValid");
   assert(
-    !isQuizValid(dog, { ...health, hunger: "" }, options),
+    !isQuizValid(dog, { ...health, hunger: "" }, customer, options),
     "quiz without hunger (fame) is rejected by isQuizValid"
   );
   assert(
-    !isQuizValid(dog, { ...health, hasDiseases: "yes", healthIssues: [] }, options),
+    !isQuizValid(dog, { ...health, hasDiseases: "yes", healthIssues: [] }, customer, options),
     "has_diseases=yes with no disease selected is rejected by isQuizValid"
   );
 
@@ -216,29 +224,40 @@ async function main() {
   // not preselect any of these — an empty value for any of them keeps the
   // whole quiz invalid, exactly like the site's own "Prosegui" staying
   // disabled.
-  assert(!isQuizValid({ ...dog, gender: "" }, health, options), "quiz without sesso (no default on the site either) is rejected");
-  assert(!isQuizValid(dog, { ...health, neutered: "" }, options), "quiz without sterilizzazione (no default on the site either) is rejected");
-  assert(!isQuizValid({ ...dog, ageYears: "" }, health, options), "quiz without anni (età) is rejected even if mesi is set");
-  assert(!isQuizValid({ ...dog, ageMonths: "" }, health, options), "quiz without mesi (età) is rejected even if anni is set");
+  assert(!isQuizValid({ ...dog, gender: "" }, health, customer, options), "quiz without sesso (no default on the site either) is rejected");
+  assert(!isQuizValid(dog, { ...health, neutered: "" }, customer, options), "quiz without sterilizzazione (no default on the site either) is rejected");
+  assert(!isQuizValid({ ...dog, ageYears: "" }, health, customer, options), "quiz without anni (età) is rejected even if mesi is set");
+  assert(!isQuizValid({ ...dog, ageMonths: "" }, health, customer, options), "quiz without mesi (età) is rejected even if anni is set");
 
   // ...but once BOTH age fields are explicitly chosen, "0 anni e 0 mesi" is
   // itself a valid combination — the live site's own age step accepts it
   // (verified live: "Prosegui" enables with both fields at "0"), it is
   // simply never the one shown by default.
-  assert(isQuizValid({ ...dog, ageYears: "0", ageMonths: "0" }, health, options), "0 anni + 0 mesi is a VALID age once both are explicitly chosen (matches the site)");
+  assert(isQuizValid({ ...dog, ageYears: "0", ageMonths: "0" }, health, customer, options), "0 anni + 0 mesi is a VALID age once both are explicitly chosen (matches the site)");
+
+  // Customer-data rules (decision of 08/10/2026), one field at a time:
+  // invalid email, letters-only phone, a 4-digit CAP, and an unticked
+  // consent each independently keep the quiz invalid even when the dog
+  // part is otherwise complete.
+  assert(!isQuizValid(dog, health, { ...customer, email: "not-an-email" }, options), "invalid email is rejected");
+  assert(!isQuizValid(dog, health, { ...customer, phone: "abc" }, options), "non-digits phone is rejected");
+  assert(!isQuizValid(dog, health, { ...customer, phone: "123" }, options), "too-short phone is rejected");
+  assert(!isQuizValid(dog, health, { ...customer, zip: "2010" }, options), "4-digit CAP is rejected");
+  assert(!isQuizValid(dog, health, { ...customer, consent: false }, options), "unticked consent is rejected");
 
   // getMissingFields names every missing required field, used to tell the
   // user what's left before the CTA is enabled.
   const emptyDog: DogData = { name: "", breed: "", breedLabel: "", gender: "", ageYears: "", ageMonths: "", weight: "", bodyCondition: "ideale" };
   const emptyHealth: HealthData = { neutered: "", activity: "attivo", hunger: "", diet: [], allergies: ["nessuna"], hasDiseases: "no", healthIssues: [] };
-  const missing = getMissingFields(emptyDog, emptyHealth, options);
-  for (const label of ["Nome", "Razza", "Sesso", "Età", "Peso", "Sterilizzazione", "Appetito", "Dieta"]) {
+  const emptyCustomerData: CustomerData = { name: "", email: "", phone: "", zip: "", consent: false };
+  const missing = getMissingFields(emptyDog, emptyHealth, emptyCustomerData, options);
+  for (const label of ["Nome", "Razza", "Sesso", "Età", "Peso", "Sterilizzazione", "Appetito", "Dieta", "Nome e cognome", "Email", "Telefono", "CAP", "Consenso"]) {
     assert(missing.includes(label), `getMissingFields reports "${label}" missing on a blank quiz`);
   }
   // Fields the site itself defaults to a visible value are never reported
   // missing just because they're untouched (bodyCondition "ideale",
   // activity "attivo", allergies "nessuna", hasDiseases "no" above).
-  assert(getMissingFields(dog, health, options).length === 0, "a fully filled-in quiz (sample dog/health) reports nothing missing");
+  assert(getMissingFields(dog, health, customer, options).length === 0, "a fully filled-in quiz + customer (sample data) reports nothing missing");
 
   console.log(failures === 0 ? "\nAll checks passed.\n" : `\n${failures} check(s) failed.\n`);
   process.exit(failures === 0 ? 0 : 1);
