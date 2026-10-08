@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Link hub Dog Heroes
 
-## Getting Started
+Link hub interno di Dog Heroes (sostituisce un Linktree esterno): pagina
+pubblica `/hub` con link configurabili, tab Shop/Quiz/Store Locator,
+analytics dei click e un'area `/admin` per gestire tutto senza toccare il
+codice.
 
-First, run the development server:
+In produzione su https://link.dogheroes.it (Render, Web Service
+`link-hub-eu`, deploy automatico da `main`).
+
+Stack: Next.js 16 (App Router) + React 19 + TypeScript, Tailwind CSS v4,
+NextAuth v5 (beta, provider Google), DB libSQL via Turso, `@dnd-kit` per il
+CMS drag&drop.
+
+Per lo stato dettagliato di produzione, variabili d'ambiente, il database
+condiviso locale/produzione (e la sua trappola), store locator, quiz e UTM:
+vedi **[AGENTS.md](./AGENTS.md)**.
+
+## Sviluppo locale
 
 ```bash
+npm install
+cp .env.example .env.local   # compila i valori reali, mai committarli
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Apri http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+⚠️ Il database Turso usato in locale è **lo stesso** della produzione: ogni
+modifica ai dati (link, sezioni, tab) è immediatamente live sul sito
+pubblico. Dettagli e regola da seguire in [AGENTS.md](./AGENTS.md#database--turso-libsql-unico-per-locale-e-produzione).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Script utili
 
-## Learn More
+```bash
+npm run build   # include typecheck, non richiede variabili d'ambiente
+npm run lint
+npx tsx scripts/test-bridge-url.ts            # valida l'URL del bridge quiz verso il tema
+npx tsx scripts/test-utm-discount-redirect.ts # valida gli UTM sui link discount/redirect
+npx tsx scripts/generate-quiz-options-fallback.ts # rigenera il fallback delle opzioni quiz
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ogni merge su `main` fa il deploy automatico su Render. La CI
+(`.github/workflows/ci.yml`) esegue secret scan (gitleaks) e build Node ad
+ogni PR e push su `main`.
