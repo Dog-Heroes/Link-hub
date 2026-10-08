@@ -2,7 +2,7 @@ import Image from "next/image";
 import TabBar from "./TabBar";
 import TrustpilotWidget from "./TrustpilotWidget";
 import ViewTracker from "./ViewTracker";
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import {
   type Brand,
   type BrandStyle,
@@ -11,6 +11,7 @@ import {
   styleToCSSVars,
   googleFontHref,
   BRAND_LABEL,
+  DOG_DEFAULT_STYLE,
 } from "@/lib/brand";
 
 /* ------------------------------------------------------------------ */
@@ -88,93 +89,172 @@ function buildStyle(brand: Brand, brandSettings: Record<string, string>): BrandS
   return { ...base, ...sanitized };
 }
 
-async function getContent(brand: Brand) {
-  const fallback = {
-    settings: {} as Record<string, string>,
-    tabs: [] as TabData[],
-    sections: [] as SectionData[],
-    links: [] as LinkData[],
+type HubContent = {
+  settings: Record<string, string>;
+  tabs: TabData[];
+  sections: SectionData[];
+  links: LinkData[];
+  socialLinks: { platform: string; url: string }[];
+  tagline: string;
+  style: BrandStyle;
+};
+
+function mapTabs(rows: Record<string, unknown>[]): TabData[] {
+  return rows.map((r) => ({
+    id: String(r.id),
+    label: String(r.label),
+    icon: String(r.icon),
+    order: Number(r.order),
+    component_key: String(r.component_key),
+  }));
+}
+
+function mapSections(rows: Record<string, unknown>[]): SectionData[] {
+  return rows.map((r) => ({
+    id: String(r.id),
+    tab_id: String(r.tab_id),
+    label: String(r.label),
+    order: Number(r.order),
+    collapsed: Boolean(r.collapsed),
+  }));
+}
+
+function mapLinks(rows: Record<string, unknown>[]): LinkData[] {
+  return rows.map((r) => ({
+    id: String(r.id),
+    section_id: String(r.section_id),
+    label: String(r.label),
+    url: String(r.url),
+    icon: String(r.icon),
+    badge: r.badge ? String(r.badge) : null,
+    order: Number(r.order),
+    link_type: String(r.link_type),
+    media_url: r.media_url ? String(r.media_url) : null,
+  }));
+}
+
+/**
+ * Brand-aware fetch (filters tabs/sections/links/social_links by `brand`,
+ * reads brand_settings for style + non-dog tagline/meta). Throws if the
+ * `brand` column/`brand_settings` table don't exist yet — see
+ * getContent()'s fallback for what happens then.
+ */
+async function getBrandAwareContent(brand: Brand): Promise<HubContent> {
+  const [settingsRows, brandSettingsRows, tabsRows, sectionsRows, linksRows, socialRows] =
+    await Promise.all([
+      db.execute("SELECT key, value FROM settings"),
+      db.execute({ sql: "SELECT key, value FROM brand_settings WHERE brand = ?", args: [brand] }),
+      db.execute({
+        sql: 'SELECT * FROM tabs WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+        args: [brand],
+      }),
+      db.execute({ sql: 'SELECT * FROM sections WHERE brand = ? ORDER BY "order"', args: [brand] }),
+      db.execute({
+        sql: 'SELECT * FROM links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+        args: [brand],
+      }),
+      db.execute({
+        sql: 'SELECT platform, url FROM social_links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
+        args: [brand],
+      }),
+    ]);
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows.rows) settings[String(row.key)] = String(row.value);
+
+  const brandSettings: Record<string, string> = {};
+  for (const row of brandSettingsRows.rows) brandSettings[String(row.key)] = String(row.value);
+
+  const socialLinks = socialRows.rows.map((r) => ({
+    platform: String(r.platform),
+    url: String(r.url),
+  }));
+
+  // Non-style settings: "dog" keeps reading the pre-existing global
+  // `settings` table exactly as before; "cat" (and any brand without a
+  // dedicated global table) uses brand_settings instead.
+  const tagline =
+    brand === "dog"
+      ? settings.tagline || DOG_DEFAULT_TAGLINE
+      : brandSettings.tagline || CAT_DEFAULT_TAGLINE;
+
+  return {
+    settings,
+    tabs: mapTabs(tabsRows.rows),
+    sections: mapSections(sectionsRows.rows),
+    links: mapLinks(linksRows.rows),
+    socialLinks,
+    tagline,
+    style: buildStyle(brand, brandSettings),
+  };
+}
+
+/**
+ * Pre-brand-column fallback for "dog" only: the exact same queries this
+ * file ran before the multi-brand feature (no `brand` filter at all, no
+ * brand_settings). Used when getBrandAwareContent() fails because the
+ * `brand` column/`brand_settings` table haven't been created yet on this
+ * DB (migration hasn't run — see src/instrumentation.ts/ensureMigrated()) —
+ * so /hub NEVER has to fall back to the hardcoded JS defaults just because
+ * of migration timing: it keeps serving the real DB content.
+ */
+async function getLegacyDogContent(): Promise<HubContent> {
+  const [settingsRows, tabsRows, sectionsRows, linksRows, socialRows] = await Promise.all([
+    db.execute("SELECT key, value FROM settings"),
+    db.execute('SELECT * FROM tabs WHERE enabled = 1 ORDER BY "order"'),
+    db.execute('SELECT * FROM sections ORDER BY "order"'),
+    db.execute('SELECT * FROM links WHERE enabled = 1 ORDER BY "order"'),
+    db.execute('SELECT platform, url FROM social_links WHERE enabled = 1 ORDER BY "order"'),
+  ]);
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows.rows) settings[String(row.key)] = String(row.value);
+
+  const socialLinks = socialRows.rows.map((r) => ({
+    platform: String(r.platform),
+    url: String(r.url),
+  }));
+
+  return {
+    settings,
+    tabs: mapTabs(tabsRows.rows),
+    sections: mapSections(sectionsRows.rows),
+    links: mapLinks(linksRows.rows),
+    socialLinks,
+    tagline: settings.tagline || DOG_DEFAULT_TAGLINE,
+    style: DOG_DEFAULT_STYLE,
+  };
+}
+
+async function getContent(brand: Brand): Promise<HubContent> {
+  const hardcodedFallback: HubContent = {
+    settings: {},
+    tabs: [],
+    sections: [],
+    links: [],
     socialLinks: brand === "dog" ? DOG_FALLBACK_SOCIAL : [],
     tagline: brand === "dog" ? DOG_DEFAULT_TAGLINE : CAT_DEFAULT_TAGLINE,
     style: defaultStyleFor(brand),
   };
 
+  // Defensive, non-blocking: the migration should already have run at
+  // startup (src/instrumentation.ts). Memoized, so this is a cheap no-op
+  // await after the first successful run; a failure here is swallowed —
+  // the queries below have their own fallback regardless.
+  await ensureMigrated().catch(() => {});
+
   try {
-    const [settingsRows, brandSettingsRows, tabsRows, sectionsRows, linksRows, socialRows] =
-      await Promise.all([
-        db.execute("SELECT key, value FROM settings"),
-        db.execute({ sql: "SELECT key, value FROM brand_settings WHERE brand = ?", args: [brand] }),
-        db.execute({
-          sql: 'SELECT * FROM tabs WHERE enabled = 1 AND brand = ? ORDER BY "order"',
-          args: [brand],
-        }),
-        db.execute({ sql: 'SELECT * FROM sections WHERE brand = ? ORDER BY "order"', args: [brand] }),
-        db.execute({
-          sql: 'SELECT * FROM links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
-          args: [brand],
-        }),
-        db.execute({
-          sql: 'SELECT platform, url FROM social_links WHERE enabled = 1 AND brand = ? ORDER BY "order"',
-          args: [brand],
-        }),
-      ]);
-
-    const settings: Record<string, string> = {};
-    for (const row of settingsRows.rows) {
-      settings[String(row.key)] = String(row.value);
+    return await getBrandAwareContent(brand);
+  } catch (err) {
+    if (brand === "dog") {
+      console.error("[hub] brand-aware query failed, falling back to the pre-migration query:", err);
+      try {
+        return await getLegacyDogContent();
+      } catch {
+        return hardcodedFallback;
+      }
     }
-
-    const brandSettings: Record<string, string> = {};
-    for (const row of brandSettingsRows.rows) {
-      brandSettings[String(row.key)] = String(row.value);
-    }
-
-    const tabs: TabData[] = tabsRows.rows.map((r) => ({
-      id: String(r.id),
-      label: String(r.label),
-      icon: String(r.icon),
-      order: Number(r.order),
-      component_key: String(r.component_key),
-    }));
-
-    const sections: SectionData[] = sectionsRows.rows.map((r) => ({
-      id: String(r.id),
-      tab_id: String(r.tab_id),
-      label: String(r.label),
-      order: Number(r.order),
-      collapsed: Boolean(r.collapsed),
-    }));
-
-    const links: LinkData[] = linksRows.rows.map((r) => ({
-      id: String(r.id),
-      section_id: String(r.section_id),
-      label: String(r.label),
-      url: String(r.url),
-      icon: String(r.icon),
-      badge: r.badge ? String(r.badge) : null,
-      order: Number(r.order),
-      link_type: String(r.link_type),
-      media_url: r.media_url ? String(r.media_url) : null,
-    }));
-
-    const socialLinks = socialRows.rows.map((r) => ({
-      platform: String(r.platform),
-      url: String(r.url),
-    }));
-
-    // Non-style settings: "dog" keeps reading the pre-existing global
-    // `settings` table exactly as before; "cat" (and any brand without a
-    // dedicated global table) uses brand_settings instead.
-    const tagline =
-      brand === "dog"
-        ? settings.tagline || DOG_DEFAULT_TAGLINE
-        : brandSettings.tagline || CAT_DEFAULT_TAGLINE;
-
-    const style = buildStyle(brand, brandSettings);
-
-    return { settings, tabs, sections, links, socialLinks, tagline, style };
-  } catch {
-    return fallback;
+    return hardcodedFallback;
   }
 }
 

@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import AppearanceForm from "@/components/admin/AppearanceForm";
 import { getAdminBrand } from "@/lib/admin-brand";
 import { defaultStyleFor, sanitizeStyle, BRAND_LABEL, type BrandStyle } from "@/lib/brand";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AspettoPage() {
   const brand = await getAdminBrand();
+  await ensureMigrated().catch(() => {});
   const base = defaultStyleFor(brand);
 
   let style: BrandStyle = base;

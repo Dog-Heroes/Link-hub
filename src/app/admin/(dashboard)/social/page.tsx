@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import SocialManager from "@/components/admin/SocialManager";
 import { getAdminBrand } from "@/lib/admin-brand";
 import { BRAND_LABEL } from "@/lib/brand";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SocialPage() {
   const brand = await getAdminBrand();
+  await ensureMigrated().catch(() => {});
   let socials: { id: string; platform: string; url: string; order: number; enabled: number }[] = [];
 
   try {

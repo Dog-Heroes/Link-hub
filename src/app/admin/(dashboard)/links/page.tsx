@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import LinksManager from "@/components/admin/LinksManager";
 import { getAdminBrand } from "@/lib/admin-brand";
 import { linksTabId, BRAND_LABEL } from "@/lib/brand";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LinksPage() {
   const brand = await getAdminBrand();
+  await ensureMigrated().catch(() => {});
   const tabId = linksTabId(brand);
   let sections: { id: string; label: string; order: number; collapsed: number }[] = [];
   let links: {

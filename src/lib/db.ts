@@ -131,3 +131,31 @@ async function addColumnIfMissing(table: string, column: string, definition: str
     await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
+
+/**
+ * Runs migrate() automatically, once per server process, before any request
+ * is served — called from src/instrumentation.ts's register() hook (Next.js
+ * runs that once per new server instance and waits for it to finish before
+ * accepting traffic). migrate() is additive/idempotent, so it's safe to run
+ * against the shared production DB on every boot.
+ *
+ * Also exported so any code path that touches a `brand` column/table can
+ * call it directly as a defensive fallback (e.g. local `next dev` without
+ * instrumentation, or a race on a very first request) — memoized, so a
+ * second call is a no-op await on the same promise. On failure the promise
+ * is reset so the next call retries (a single failed boot never locks the
+ * app out of ever migrating), and the error is only logged, never thrown
+ * further than here lets call it — callers decide whether to fall back.
+ */
+let migratedPromise: Promise<void> | null = null;
+
+export function ensureMigrated(): Promise<void> {
+  if (!migratedPromise) {
+    migratedPromise = migrate().catch((err) => {
+      console.error("[db] migration failed:", err);
+      migratedPromise = null; // allow a retry on the next call
+      throw err;
+    });
+  }
+  return migratedPromise;
+}

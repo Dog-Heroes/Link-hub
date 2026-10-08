@@ -52,6 +52,26 @@ riferimento (8 ottobre 2026): un link CMS con id `#quiz` creato nel DB prima
 che il codice capace di gestire le tab interne (`#<id-tab>`) fosse deployato
 ha mandato `/hub` in errore 500 in produzione.
 
+**Migrazione automatica allo startup**: `migrate()` (additiva/idempotente)
+gira da sola **una volta per processo, prima che il server accetti
+richieste**, via `src/instrumentation.ts` → `register()` (hook ufficiale di
+Next.js) → `ensureMigrated()` in `src/lib/db.ts` (promise memoizzata). Non
+serve quindi alcuno step manuale dopo il deploy perché lo schema sia pronto:
+è sicuro farla girare anche contro il DB condiviso a ogni boot, perché ogni
+cambiamento è `ADD COLUMN`/`CREATE TABLE IF NOT EXISTS` guardato (non tocca
+mai una colonna/tabella già esistente). Se dovesse fallire allo startup (es.
+DB momentaneamente irraggiungibile), l'errore viene solo loggato — il server
+parte comunque, e le pagine pubbliche hanno un fallback proprio (vedi sotto)
+anziché crashare. `ensureMigrated()` viene richiamata anche da `HubShell`,
+da `/api/track` e dalle pagine di `/admin` prima delle loro query, come rete
+di sicurezza in più (costa poco: dopo il primo successo è solo un await su
+una promise già risolta).
+
+⚠️ Questo riguarda **solo lo schema** (colonne/tabelle): i *contenuti* restano
+soggetti alla regola sopra — uno script come `scripts/seed-cat.ts` che
+inserisce righe va comunque lanciato solo dopo che il codice che le usa è in
+produzione.
+
 `local.db` nella root è solo un **fallback obsoleto** (usato quando
 `TURSO_DATABASE_URL` non è impostata, vedi `src/lib/db.ts`): non è il DB
 usato in pratica, non va trattato come sorgente di verità, e non va MAI
@@ -213,11 +233,17 @@ viene mostrato su `/cat` (business unit Trustpilot è solo di Dog Heroes).
 
 **Seed**: `scripts/seed-cat.ts` (idempotente, `INSERT OR REPLACE`) crea le
 due tab Cat Heroes, una sezione con 2–3 link segnaposto verso le pagine Cat
-Heroes di dogheroes.it, e tagline/meta di default in `brand_settings`. **Non
-va eseguito contro il DB condiviso prima che il codice che lo richiede sia
-in produzione** — vedi avviso nello script stesso e la trappola del DB
-condiviso più sopra. Nessuna riga di stile viene seminata (il default Cat
-Heroes si applica da codice senza bisogno di dati).
+Heroes di dogheroes.it, e tagline/meta di default in `brand_settings`. La
+migrazione dello schema (colonne `brand` + tabella `brand_settings`) **non**
+dipende più da questo script: gira da sola allo startup del server (vedi
+sezione Database, "Migrazione automatica allo startup") — questo script
+resta solo per i **contenuti** Cat Heroes, e **non va eseguito contro il DB
+condiviso prima che il codice che li usa sia in produzione** (merge + deploy
+completato) — vedi avviso nello script stesso e la trappola del DB condiviso
+più sopra. Nessuna riga di stile viene seminata (il default Cat Heroes si
+applica da codice senza bisogno di dati). Procedura completa: **merge → deploy
+(migrazione schema automatica) → verifica `/hub` identico e `/cat` 200 →
+`scripts/seed-cat.ts` → contenuti reali dall'admin**.
 
 ## Quiz "Piano su Misura" — stesse opzioni del sito, bridge al tema
 

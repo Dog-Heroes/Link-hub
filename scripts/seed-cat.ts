@@ -8,9 +8,15 @@
  * to whatever TURSO_DATABASE_URL points at. The correct order is:
  *
  *   1. Merge the PR that adds /cat, the brand columns and this script.
- *   2. Wait for the Render deploy to finish (main -> link-hub-eu).
- *   3. Only then run, against the real (shared) database:
+ *   2. Wait for the Render deploy to finish (main -> link-hub-eu). The
+ *      schema migration (brand columns + brand_settings table) now runs
+ *      AUTOMATICALLY at server startup (src/instrumentation.ts ->
+ *      ensureMigrated() in src/lib/db.ts) — no manual step needed for it.
+ *   3. Verify /hub still looks identical and /cat responds 200.
+ *   4. Only then run this script, against the real (shared) database:
  *        npx tsx scripts/seed-cat.ts
+ *      (it still calls migrate() itself too — see below — purely as a
+ *      redundant safety net in case this is somehow run before step 2).
  *
  * Before that, test it against an isolated local DB file, e.g.:
  *   TURSO_DATABASE_URL="file:./local-cat-test.db" TURSO_AUTH_TOKEN="" \
@@ -19,6 +25,8 @@
  * What it does:
  *   - Runs migrate() (adds the `brand` columns + brand_settings table —
  *     additive/backward-compatible, safe on the existing production data).
+ *     Redundant with the automatic startup migration above, but harmless
+ *     and idempotent, so kept as a safety net.
  *   - Creates the two Cat Heroes tabs (links-cat, stores-cat).
  *   - Creates one placeholder section with 2–3 links to the Cat Heroes
  *     pages on dogheroes.it — meant to be replaced/edited from /admin

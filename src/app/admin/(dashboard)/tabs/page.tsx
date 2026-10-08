@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import TabsManager from "@/components/admin/TabsManager";
 import { getAdminBrand } from "@/lib/admin-brand";
 import { BRAND_LABEL } from "@/lib/brand";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TabsPage() {
   const brand = await getAdminBrand();
+  await ensureMigrated().catch(() => {});
   let tabs: { id: string; label: string; icon: string; order: number; enabled: number; component_key: string }[] = [];
 
   try {

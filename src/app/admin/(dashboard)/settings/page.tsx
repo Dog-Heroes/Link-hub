@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, ensureMigrated } from "@/lib/db";
 import SettingsForm from "@/components/admin/SettingsForm";
 import { getAdminBrand } from "@/lib/admin-brand";
 import { BRAND_LABEL } from "@/lib/brand";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const brand = await getAdminBrand();
+  await ensureMigrated().catch(() => {});
   const settings: Record<string, string> = {};
 
   try {
