@@ -87,6 +87,14 @@ async function main() {
   assert(valueSet(options, "activityLevels").has(params.get("activity") ?? ""), "activity is a valid handle");
   assert(valueSet(options, "hungerLevels").has(params.get("hunger") ?? ""), "hunger is present and a valid handle");
 
+  // The bridge on the theme (Dog-Heroes/dogheroes-theme PR #302) stops the
+  // user on that step if a field is missing from the URL at all, not just
+  // if its value is invalid — so these must always be present, even when a
+  // default value already covers them.
+  for (const key of ["build", "activity", "allergies", "has_diseases", "sterilization", "hunger", "sex", "breed", "diet", "weight", "birthday"]) {
+    assert(params.has(key), `${key} is always present in the URL (never omitted)`);
+  }
+
   const dietValues = valueSet(options, "diets");
   const sentDiets = (params.get("diet") ?? "").split(",").filter(Boolean);
   assert(sentDiets.length > 0, "diet is sent");

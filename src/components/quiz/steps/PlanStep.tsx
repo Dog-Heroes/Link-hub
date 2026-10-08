@@ -36,17 +36,21 @@ function approximateBirthday(ageYears: number, ageMonths: number): string {
 function buildBridgeUrl(dog: DogData, health: HealthData): string {
   const params = new URLSearchParams();
 
+  // Every field is sent explicitly, even when a default already covers it
+  // (build, activity, allergies, has_diseases) — the bridge on the theme
+  // (Dog-Heroes/dogheroes-theme PR #302) stops the user on that step of
+  // the on-site quiz for any field missing from the URL, not just for an
+  // invalid value.
   params.set("name", dog.name.trim());
   params.set("breed", dog.breed);
   params.set("sex", dog.gender);
   params.set("birthday", approximateBirthday(dog.ageYears, dog.ageMonths));
   params.set("weight", dog.weight);
-  if (dog.bodyCondition) params.set("build", dog.bodyCondition);
-  if (health.activity) params.set("activity", health.activity);
+  params.set("build", dog.bodyCondition);
+  params.set("activity", health.activity);
   params.set("sterilization", health.neutered);
   params.set("hunger", health.hunger);
-
-  if (health.diet.length) params.set("diet", health.diet.join(","));
+  params.set("diet", health.diet.join(","));
 
   // "nessuna" is itself a valid handle on the site (the "no allergy"
   // checkbox is checked by default and still submitted) — mirror that
@@ -57,7 +61,7 @@ function buildBridgeUrl(dog: DogData, health: HealthData): string {
   );
 
   params.set("has_diseases", health.hasDiseases);
-  if (health.hasDiseases === "yes" && health.healthIssues.length) {
+  if (health.hasDiseases === "yes") {
     params.set("diseases", health.healthIssues.join(","));
   }
 
