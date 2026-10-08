@@ -3,10 +3,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuiz } from "../QuizContext";
+import type { QuizOption } from "@/lib/quiz-options";
+
+function labelFor(options: QuizOption[] | undefined, value: string): string {
+  return options?.find((o) => o.value === value)?.label ?? value;
+}
 
 export default function DogSummaryCard() {
   const { state } = useQuiz();
-  const { dog, health } = state;
+  const { dog, health, options } = state;
   const [open, setOpen] = useState(true);
 
   const dogName = dog.name || "Il tuo cane";
@@ -15,25 +20,45 @@ export default function DogSummaryCard() {
   if (!hasData) return null;
 
   const rows: { icon: string; text: string }[] = [];
-  if (dog.breed) rows.push({ icon: "🐕", text: dog.breed });
-  if (dog.gender) rows.push({ icon: dog.gender === "Maschietto" ? "♂" : "♀", text: dog.gender });
-  if (dog.ageYears || dog.ageMonths) {
+  if (dog.breedLabel) rows.push({ icon: "🐕", text: dog.breedLabel });
+  if (dog.gender) {
+    rows.push({
+      icon: dog.gender === "male" ? "♂" : "♀",
+      text: labelFor(options?.sex, dog.gender),
+    });
+  }
+  // ageYears/ageMonths are the raw <select> string values ("" = not chosen
+  // yet, see QuizContext) — "0" is a deliberate, valid choice (the site
+  // itself accepts a newborn "0 anni e 0 mesi"), so it must still show up
+  // here once explicitly picked, unlike the empty/unset string.
+  if (dog.ageYears !== "" || dog.ageMonths !== "") {
     const parts = [];
-    if (dog.ageYears) parts.push(`${dog.ageYears} ann${dog.ageYears === 1 ? "o" : "i"}`);
-    if (dog.ageMonths) parts.push(`${dog.ageMonths} mes${dog.ageMonths === 1 ? "e" : "i"}`);
+    if (dog.ageYears !== "") parts.push(`${dog.ageYears} ann${Number(dog.ageYears) === 1 ? "o" : "i"}`);
+    if (dog.ageMonths !== "") parts.push(`${dog.ageMonths} mes${Number(dog.ageMonths) === 1 ? "e" : "i"}`);
     rows.push({ icon: "🎂", text: parts.join(" e ") });
   }
 
   const details: string[] = [];
   if (dog.weight) {
-    const bc = dog.bodyCondition && dog.bodyCondition !== "undefined" ? dog.bodyCondition : null;
+    const bc = dog.bodyCondition ? labelFor(options?.bodyConditions, dog.bodyCondition) : null;
     details.push(`Pesa ${dog.weight}kg${bc ? ` e la sua corporatura è ${bc}` : ""}`);
   }
-  if (health.diet) details.push(`Dieta attuale: ${health.diet}`);
-  if (health.allergies.length > 0) details.push(`Allergie: ${health.allergies.join(", ")}`);
-  else if (dog.breed) details.push("Allergie: nessuna");
-  if (health.healthIssues.length > 0) details.push(`Problemi di salute: ${health.healthIssues.join(", ")}`);
-  else if (dog.breed) details.push("Problemi di salute: nessuno");
+  if (health.diet.length > 0) {
+    details.push(`Dieta attuale: ${health.diet.map((d) => labelFor(options?.diets, d)).join(", ")}`);
+  }
+  const allergyLabels = health.allergies.filter((a) => a !== "nessuna");
+  if (allergyLabels.length > 0) {
+    details.push(`Allergie: ${allergyLabels.map((a) => labelFor(options?.allergies, a)).join(", ")}`);
+  } else if (dog.breed) {
+    details.push("Allergie: nessuna");
+  }
+  if (health.hasDiseases === "yes" && health.healthIssues.length > 0) {
+    details.push(
+      `Problemi di salute: ${health.healthIssues.map((h) => labelFor(options?.healthIssues, h)).join(", ")}`
+    );
+  } else if (dog.breed) {
+    details.push("Problemi di salute: nessuno");
+  }
 
   return (
     <div className="bg-white rounded-2xl border-2 border-[#002B49]/8 overflow-hidden">

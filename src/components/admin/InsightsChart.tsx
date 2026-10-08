@@ -46,12 +46,23 @@ export default function InsightsChart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/admin/analytics?days=${days}`)
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    async function loadAnalytics() {
+      setLoading(true);
+      try {
+        const r = await fetch(`/api/admin/analytics?days=${days}`);
+        const json = await r.json();
+        if (!cancelled) setData(json);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadAnalytics();
+    return () => {
+      cancelled = true;
+    };
   }, [days]);
 
   if (loading || !data) {

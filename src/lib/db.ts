@@ -81,6 +81,14 @@ export async function migrate() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    -- Store locator: NON creare piu' una tabella "stores" propria.
+    -- Dal refactor store-locator-admin (ott 2026) /api/stores legge i negozi
+    -- direttamente dallo store locator gia' live sul tema Shopify
+    -- (dogheroes.it/pages/punti-vendita, vedi src/lib/store-locator.ts),
+    -- con fallback al JSON statico src/config/stores.json. Una eventuale
+    -- vecchia tabella "stores" in un DB esistente NON va droppata qui
+    -- (dati di produzione): resta semplicemente inutilizzata.
+
     -- Index for analytics queries
     CREATE INDEX IF NOT EXISTS idx_events_link_id ON events(link_id);
     CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUTM } from "@/hooks/useUTM";
-import { appendUTM } from "@/lib/utm";
+import { appendUTM, isSiteUrl } from "@/lib/utm";
 import { trackEvent } from "@/lib/analytics";
 import type { SectionData, LinkData } from "../HubShell";
 
@@ -50,6 +50,20 @@ function LinkIcon({ name }: { name?: string }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Internal tab links                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A link whose `url` is `#<tabId>` (e.g. `#quiz`) opens that tab of the hub
+ * itself instead of navigating anywhere — the CMS convention for "Crea il
+ * piano personalizzato" pointing at the hub's own Quiz tab rather than an
+ * external site. Returns the target tab id, or null for a normal URL.
+ */
+function internalTabId(url: string): string | null {
+  return url.startsWith("#") && url.length > 1 ? url.slice(1) : null;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Hero CTA                                                           */
 /* ------------------------------------------------------------------ */
 
@@ -57,10 +71,12 @@ function HeroCTAButton({
   utm,
   sections,
   links,
+  onNavigateTab,
 }: {
   utm: Record<string, string | undefined>;
   sections: SectionData[];
   links: LinkData[];
+  onNavigateTab?: (tabId: string) => void;
 }) {
   // Hero CTA is the first link in the "hero_cta" section, or the first section's first link
   const heroSection = sections.find((s) => s.id === "hero_cta");
@@ -70,9 +86,17 @@ function HeroCTAButton({
 
   if (!heroLink) return null;
 
-  const href = appendUTM(heroLink.url, utm);
+  const tabId = internalTabId(heroLink.url);
 
-  function handleClick() {
+  // Same rule as the regular link cards: only tag links that point back
+  // at the Dog Heroes site, never an external domain.
+  const href = tabId ? "#" : isSiteUrl(heroLink.url) ? appendUTM(heroLink.url, utm) : heroLink.url;
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (tabId) {
+      e.preventDefault();
+      onNavigateTab?.(tabId);
+    }
     trackEvent("link_hub_click", {
       link_id: "hero_cta",
       label: heroLink!.label,
@@ -107,10 +131,12 @@ function CollapsibleSection({
   section,
   sectionLinks,
   utm,
+  onNavigateTab,
 }: {
   section: SectionData;
   sectionLinks: LinkData[];
   utm: Record<string, string | undefined>;
+  onNavigateTab?: (tabId: string) => void;
 }) {
   const [open, setOpen] = useState(!section.collapsed);
 
@@ -155,7 +181,7 @@ function CollapsibleSection({
           >
             <div className="flex flex-col gap-3 pb-2">
               {sectionLinks.map((link) => (
-                <LinkCard key={link.id} link={link} utm={utm} />
+                <LinkCard key={link.id} link={link} utm={utm} onNavigateTab={onNavigateTab} />
               ))}
             </div>
           </motion.div>
@@ -183,13 +209,24 @@ function extractYouTubeId(url: string): string | null {
 function LinkCard({
   link,
   utm,
+  onNavigateTab,
 }: {
   link: LinkData;
   utm: Record<string, string | undefined>;
+  onNavigateTab?: (tabId: string) => void;
 }) {
-  const href = appendUTM(link.url, utm);
+  const tabId = internalTabId(link.url);
 
-  function handleClick() {
+  // External platforms (social, YouTube, Trustpilot, Notion, Empathy…) never
+  // get the hub's UTM — only links back to the Dog Heroes site do. An
+  // internal tab link (#quiz) never gets a UTM either: it never leaves the hub.
+  const href = tabId ? "#" : isSiteUrl(link.url) ? appendUTM(link.url, utm) : link.url;
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (tabId) {
+      e.preventDefault();
+      onNavigateTab?.(tabId);
+    }
     trackEvent("link_hub_click", {
       link_id: link.id,
       label: link.label,
@@ -314,8 +351,7 @@ function LinkCard({
     <a
       href={href}
       onClick={handleClick}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(tabId ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       className="
         flex items-center gap-3.5 px-4 py-3.5
         bg-white rounded-2xl
@@ -370,9 +406,11 @@ function ChevronIcon() {
 export default function LinksTab({
   sections = [],
   links = [],
+  onNavigateTab,
 }: {
   sections?: SectionData[];
   links?: LinkData[];
+  onNavigateTab?: (tabId: string) => void;
 }) {
   const utm = useUTM();
 
@@ -381,7 +419,7 @@ export default function LinksTab({
 
   return (
     <div className="px-4 pt-5 flex flex-col gap-4">
-      <HeroCTAButton utm={utm} sections={sections} links={links} />
+      <HeroCTAButton utm={utm} sections={sections} links={links} onNavigateTab={onNavigateTab} />
 
       <div className="flex flex-col gap-1 mt-1">
         {regularSections.map((section) => (
@@ -390,6 +428,7 @@ export default function LinksTab({
             section={section}
             sectionLinks={links.filter((l) => l.section_id === section.id)}
             utm={utm}
+            onNavigateTab={onNavigateTab}
           />
         ))}
       </div>

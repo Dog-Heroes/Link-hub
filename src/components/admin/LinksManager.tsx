@@ -388,7 +388,7 @@ function EditLinkForm({
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-          placeholder="URL"
+          placeholder="URL (o #id-tab per una tab interna, es. #quiz)"
         />
       </div>
 
@@ -458,7 +458,7 @@ function AddLinkForm({ onSave, onCancel }: { onSave: (data: { label: string; url
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#E1251B]"
-          placeholder="https://..."
+          placeholder="https://... (o #id-tab per una tab interna, es. #quiz)"
         />
       </div>
       <div className="flex gap-2 items-center">

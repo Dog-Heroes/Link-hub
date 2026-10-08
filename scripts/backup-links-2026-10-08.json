@@ -1,0 +1,149 @@
+{
+  "_comment": "Backup (pre-image) delle righe toccate dal fix link 08/10/2026, PR #3. Preso via script Node (@libsql/client) direttamente dal DB Turso remoto (dog-heroes-hub-viviana-alessio-dogheroes), non da local.db.",
+  "taken_at": "2026-10-08T10:09:22.950Z",
+  "links": [
+    {
+      "id": "60f78bec-a1d5-4e51-8838-2dd87502c8bf",
+      "section_id": "be92ef89-c909-43f2-b399-3e395714b913",
+      "label": "Come funziona?",
+      "url": "https://www.dogheroes.it",
+      "icon": "link",
+      "badge": null,
+      "order": 0,
+      "enabled": 1,
+      "link_type": "youtube",
+      "media_url": "https://www.youtube.com/watch?v=rndTq8VQT48",
+      "click_count": 1
+    },
+    {
+      "id": "acquista-box-prova",
+      "section_id": "ordina-online",
+      "label": "🐶 ACQUISTA UNA BOX PROVA AL 30% DI SCONTO 🎁",
+      "url": "https://www.dogheroes.it/crea?promocoupon=cibofresco3",
+      "icon": "link",
+      "badge": null,
+      "order": 0,
+      "enabled": 1,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 0
+    },
+    {
+      "id": "ambassador",
+      "section_id": "contatto",
+      "label": "🏆 Diventa un Ambassador",
+      "url": "https://www.dogheroes.it/ambassador-program/",
+      "icon": "link",
+      "badge": null,
+      "order": 0,
+      "enabled": 1,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 0
+    },
+    {
+      "id": "blog",
+      "section_id": "family",
+      "label": "🖤 Leggi il nostro Blog",
+      "url": "https://www.dogheroes.it/blog/",
+      "icon": "link",
+      "badge": null,
+      "order": 1,
+      "enabled": 1,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 0
+    },
+    {
+      "id": "e4619d99-4da6-4224-b688-23e4deaa84be",
+      "section_id": "be92ef89-c909-43f2-b399-3e395714b913",
+      "label": "ESPLORA",
+      "url": "https://www.dogheroes.it",
+      "icon": "link",
+      "badge": "POLLO",
+      "order": 1,
+      "enabled": 1,
+      "link_type": "featured",
+      "media_url": "https://www.dogheroes.it/wp-content/uploads/2025/07/foto-dispensa-5-scaled.jpg",
+      "click_count": 1
+    },
+    {
+      "id": "hero-cta-main",
+      "section_id": "hero-cta",
+      "label": "Scopri i nostri piani",
+      "url": "https://www.dogheroes.com/piani",
+      "icon": "sparkle",
+      "badge": null,
+      "order": 0,
+      "enabled": 1,
+      "link_type": "cta",
+      "media_url": null,
+      "click_count": 1
+    },
+    {
+      "id": "piano-personalizzato",
+      "section_id": "popular",
+      "label": "Crea il piano personalizzato",
+      "url": "https://www.dogheroes.com/quiz",
+      "icon": "sparkle",
+      "badge": "Nuovo",
+      "order": 0,
+      "enabled": 1,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 3
+    },
+    {
+      "id": "recensioni",
+      "section_id": "popular",
+      "label": "Leggi le recensioni",
+      "url": "https://www.dogheroes.com/recensioni",
+      "icon": "star",
+      "badge": null,
+      "order": 1,
+      "enabled": 1,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 0
+    },
+    {
+      "id": "trova-negozio",
+      "section_id": "pet-store",
+      "label": "📍 Trova il negozio più vicino a te 🐕",
+      "url": "https://www.google.com/maps/d/u/0/edit?mid=fMWOyCH",
+      "icon": "link",
+      "badge": null,
+      "order": 0,
+      "enabled": 0,
+      "link_type": "link",
+      "media_url": null,
+      "click_count": 0
+    }
+  ],
+  "sections": [
+    {
+      "id": "be92ef89-c909-43f2-b399-3e395714b913",
+      "tab_id": "links",
+      "label": "Nuova sezione",
+      "order": 7,
+      "collapsed": 0,
+      "type": "links"
+    }
+  ],
+  "tabs": [
+    {
+      "id": "quiz",
+      "label": "Piano su Misura",
+      "icon": "sparkle",
+      "order": 3,
+      "enabled": 0,
+      "component_key": "QuizTab"
+    }
+  ],
+  "settings": [
+    {
+      "key": "quiz_submit_url",
+      "value": "https://dogheroes-production.myshopify.com/pages/quiz"
+    }
+  ]
+}
