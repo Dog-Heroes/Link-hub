@@ -3,7 +3,7 @@
 import { useQuiz, type HealthData } from "../QuizContext";
 import FormField from "../ui/FormField";
 import ToggleSwitch from "../ui/ToggleSwitch";
-import ChipSelector from "../ui/ChipSelector";
+import MultiSelectDropdown from "../ui/MultiSelectDropdown";
 
 export default function HealthStep() {
   const { state, dispatch } = useQuiz();
@@ -75,21 +75,26 @@ export default function HealthStep() {
         </div>
       </FormField>
 
-      {/* Dieta attuale — multi-selezione, come sul sito (quiz[][diet][]) */}
+      {/* Dieta attuale — multi-selezione, come sul sito (quiz[][diet][]).
+          Dropdown compatto invece delle pillole: su mobile 4 pillole intere
+          occupavano troppo spazio verticale. */}
       <FormField label="Che tipo di alimentazione sta seguendo?">
-        <ChipSelector
+        <MultiSelectDropdown
           options={opts.diets}
           selected={health.diet}
           onChange={(v) => setHealth("diet", v)}
+          placeholder="Seleziona la dieta…"
         />
       </FormField>
 
-      {/* Allergie */}
+      {/* Allergie — stesso dropdown; "nessuna" resta esclusiva (deseleziona
+          le altre e viceversa, vedi MultiSelectDropdown/quiz-options). */}
       <FormField label="Allergie o intolleranze">
-        <ChipSelector
+        <MultiSelectDropdown
           options={opts.allergies}
           selected={health.allergies}
           onChange={(v) => setHealth("allergies", v)}
+          placeholder="Seleziona le allergie…"
         />
       </FormField>
 
@@ -109,11 +114,14 @@ export default function HealthStep() {
       </FormField>
 
       {health.hasDiseases === "yes" && (
+        // Stesso dropdown: 10 patologie in pillole erano ancora più
+        // ingombranti delle 12 allergie.
         <FormField label="Quali?">
-          <ChipSelector
+          <MultiSelectDropdown
             options={opts.healthIssues}
             selected={health.healthIssues}
             onChange={(v) => setHealth("healthIssues", v)}
+            placeholder="Seleziona…"
           />
         </FormField>
       )}

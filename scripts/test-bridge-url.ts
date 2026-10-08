@@ -13,8 +13,8 @@
  */
 
 import { getQuizOptions, type QuizOptions } from "../src/lib/quiz-options";
-import { buildBridgeUrl, isQuizValid, approximateBirthday } from "../src/components/quiz/steps/PlanStep";
-import type { DogData, HealthData } from "../src/components/quiz/QuizContext";
+import { buildBridgeUrl, buildCustomerFragment, isQuizValid, approximateBirthday } from "../src/components/quiz/steps/PlanStep";
+import type { DogData, HealthData, CustomerData } from "../src/components/quiz/QuizContext";
 import { appendUTM, getFixedUTM } from "../src/lib/utm";
 
 let failures = 0;
@@ -72,10 +72,61 @@ async function main() {
 
   assert(isQuizValid(dog, health, options), "sample dog passes the hub's own required-field check");
 
-  const url = buildBridgeUrl(dog, health);
+  // Sample customer data (dati finti) — the optional final step of the
+  // mini quiz. These must NEVER leak into the query string: only into the
+  // URL fragment (see buildCustomerFragment in PlanStep.tsx).
+  const customer: CustomerData = {
+    name: "Maria Rossi",
+    email: "maria.rossi@example.com",
+    phone: "333 1234567",
+    zip: "20100",
+  };
+
+  const url = buildBridgeUrl(dog, health, customer);
   console.log(`\nSample bridge URL:\n${url}\n`);
 
-  const params = new URL(url).searchParams;
+  const [urlWithoutFragment, fragment] = url.split("#");
+  const params = new URL(urlWithoutFragment).searchParams;
+
+  assert(url.includes("#"), "bridge URL carries a fragment when customer data is filled in");
+  assert(!!fragment, "fragment is non-empty when customer data is filled in");
+
+  // PII must NEVER be in the query string — only in the fragment.
+  for (const piiKey of ["c_name", "c_email", "c_phone", "c_zip", "name_customer"]) {
+    assert(!params.has(piiKey), `query string never carries ${piiKey}`);
+  }
+  assert(!urlWithoutFragment.includes(encodeURIComponent(customer.email)), "query string never contains the customer email");
+  assert(!urlWithoutFragment.includes(encodeURIComponent(customer.phone.replace(/\s/g, "+"))), "query string never contains the customer phone");
+
+  // The fragment itself, built with URLSearchParams, carries exactly the
+  // four contact fields the contract with the bridge (dogheroes-theme PR
+  // #302) defines — c_name/c_email/c_phone/c_zip.
+  const fragmentParams = new URLSearchParams(fragment);
+  assert(fragmentParams.get("c_name") === customer.name, "c_name is in the fragment, unmodified");
+  assert(fragmentParams.get("c_email") === customer.email, "c_email is in the fragment, unmodified");
+  assert(fragmentParams.get("c_phone") === customer.phone, "c_phone is in the fragment, unmodified");
+  assert(fragmentParams.get("c_zip") === customer.zip, "c_zip is in the fragment, unmodified");
+
+  // Dog's own name param ("name") stays in the query string (it's a
+  // required field of the dog quiz itself, not a customer field) and is
+  // unaffected by the customer fragment.
+  assert(params.get("name") === "Fido", "dog's own 'name' query param is untouched by the customer fragment");
+
+  // Empty/partial customer data: no fragment at all, nothing optional
+  // blocks the quiz CTA.
+  const emptyCustomer: CustomerData = { name: "", email: "", phone: "", zip: "" };
+  const urlNoCustomer = buildBridgeUrl(dog, health, emptyCustomer);
+  assert(!urlNoCustomer.includes("#"), "no customer data filled in -> no fragment at all");
+
+  // An invalid email is dropped rather than sent through; the other three
+  // optional fields are unaffected.
+  const partialCustomer: CustomerData = { name: "Maria Rossi", email: "not-an-email", phone: "", zip: "20100" };
+  const partialFragment = buildCustomerFragment(partialCustomer);
+  const partialParams = new URLSearchParams(partialFragment);
+  assert(partialParams.get("c_name") === "Maria Rossi", "c_name is kept even when other fields are empty/invalid");
+  assert(!partialParams.has("c_email"), "an obviously invalid email is dropped from the fragment");
+  assert(!partialParams.has("c_phone"), "an empty phone is omitted from the fragment");
+  assert(partialParams.get("c_zip") === "20100", "c_zip is kept");
 
   assert(url.startsWith("https://www.dogheroes.it/pages/quiz?"), "submitUrl points at dogheroes.it, not the myshopify domain");
   assert(params.get("bridge") === "1", "bridge=1 is set");
@@ -129,6 +180,11 @@ async function main() {
   assert(utmParams.get("utm_source") === "linktree", "bridge URL carries utm_source=linktree");
   assert(utmParams.get("utm_medium") === "bio", "bridge URL carries utm_medium=bio");
   assert(utmParams.get("utm_campaign") === null, "no ?s= on the hub URL -> no utm_campaign at all");
+
+  // appendUTM only ever touches the query string: the customer fragment
+  // must survive completely untouched, with the exact same c_* values.
+  const utmFragment = urlWithUtm.split("#")[1] ?? "";
+  assert(utmFragment === fragment, "appendUTM leaves the customer fragment byte-for-byte untouched");
 
   // ?s=ig / ?s=tt on the hub URL map to a campaign; any incoming
   // utm_source/utm_medium/utm_campaign is ignored (the fixed ones always win).

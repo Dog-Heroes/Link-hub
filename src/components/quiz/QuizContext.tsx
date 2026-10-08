@@ -35,9 +35,26 @@ export interface HealthData {
   healthIssues: string[];  // handles; only meaningful when hasDiseases === "yes"
 }
 
+/**
+ * Optional contact details, entered on the hub's own final step. NEVER
+ * persisted here or sent to the hub's own analytics/DB — they only ever
+ * leave the browser inside the bridge URL's fragment (c_name/c_email/
+ * c_phone/c_zip, see PlanStep.tsx buildBridgeUrl), never in the query
+ * string, so they can't end up in logs, GA4 or a referrer header. The site
+ * still collects the marketing/privacy consent itself; the hub never
+ * simulates it.
+ */
+export interface CustomerData {
+  name: string;
+  email: string;
+  phone: string;
+  zip: string;
+}
+
 export interface QuizState {
   dog: DogData;
   health: HealthData;
+  customer: CustomerData;
   currentSection: number;
   options: QuizOptions | null;
   optionsLoading: boolean;
@@ -50,6 +67,7 @@ export interface QuizState {
 type QuizAction =
   | { type: "SET_DOG"; field: keyof DogData; value: DogData[keyof DogData] }
   | { type: "SET_HEALTH"; field: keyof HealthData; value: HealthData[keyof HealthData] }
+  | { type: "SET_CUSTOMER"; field: keyof CustomerData; value: CustomerData[keyof CustomerData] }
   | { type: "SET_SECTION"; section: number }
   | { type: "SET_OPTIONS"; options: QuizOptions }
   | { type: "SET_OPTIONS_LOADING"; loading: boolean };
@@ -78,6 +96,12 @@ const initialState: QuizState = {
     hasDiseases: "no",
     healthIssues: [],
   },
+  customer: {
+    name: "",
+    email: "",
+    phone: "",
+    zip: "",
+  },
   currentSection: 1,
   options: null,
   optionsLoading: true,
@@ -93,6 +117,8 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return { ...state, dog: { ...state.dog, [action.field]: action.value } };
     case "SET_HEALTH":
       return { ...state, health: { ...state.health, [action.field]: action.value } };
+    case "SET_CUSTOMER":
+      return { ...state, customer: { ...state.customer, [action.field]: action.value } };
     case "SET_SECTION":
       return { ...state, currentSection: action.section };
     case "SET_OPTIONS":
