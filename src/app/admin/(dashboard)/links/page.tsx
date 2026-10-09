@@ -9,6 +9,7 @@ export default async function LinksPage() {
   const brand = await getAdminBrand();
   await ensureMigrated().catch(() => {});
   const tabId = linksTabId(brand);
+  let tabExists = false;
   let sections: { id: string; label: string; order: number; collapsed: number }[] = [];
   let links: {
     id: string;
@@ -25,6 +26,9 @@ export default async function LinksPage() {
   }[] = [];
 
   try {
+    const tabRow = await db.execute({ sql: "SELECT id FROM tabs WHERE id = ?", args: [tabId] });
+    tabExists = tabRow.rows.length > 0;
+
     const sResult = await db.execute({
       sql: 'SELECT id, label, "order", collapsed FROM sections WHERE tab_id = ? ORDER BY "order"',
       args: [tabId],
@@ -60,7 +64,7 @@ export default async function LinksPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-[#002B49] mb-6">Gestione Link — {BRAND_LABEL[brand]}</h1>
-      <LinksManager initialSections={sections} initialLinks={links} tabId={tabId} brand={brand} />
+      <LinksManager initialSections={sections} initialLinks={links} tabId={tabId} brand={brand} tabExists={tabExists} />
     </div>
   );
 }

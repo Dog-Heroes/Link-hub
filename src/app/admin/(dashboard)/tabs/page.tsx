@@ -30,7 +30,7 @@ export default async function TabsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-[#002B49] mb-6">Gestione Tab — {BRAND_LABEL[brand]}</h1>
-      <TabsManager initial={tabs} />
+      <TabsManager initial={tabs} brand={brand} />
     </div>
   );
 }
