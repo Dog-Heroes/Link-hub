@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAdminBrand } from "@/lib/admin-brand";
+import { checkLinkBrand } from "@/lib/admin-brand-guard";
 
 export async function PATCH(req: NextRequest) {
   const session = await auth();
@@ -14,6 +16,11 @@ export async function PATCH(req: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
+
+  const brand = await getAdminBrand();
+  const ownership = await checkLinkBrand(id, brand);
+  if (ownership === "missing") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (ownership === "other-brand") return NextResponse.json({ error: "Forbidden: link belongs to another brand" }, { status: 403 });
 
   const updates: string[] = [];
   const args: (string | number | null)[] = [];
@@ -75,12 +82,22 @@ export async function POST(req: NextRequest) {
 
   // The link's brand is derived from its parent section — never trusted
   // from the client — so a link can never end up tagged with a brand its
-  // section doesn't belong to.
+  // section doesn't belong to. The section itself must also belong to the
+  // admin's currently active brand, so a request can't inject a link into a
+  // section of the OTHER brand while that brand isn't even the active one.
+  const activeBrand = await getAdminBrand();
   const sectionRow = await db.execute({
     sql: "SELECT brand FROM sections WHERE id = ?",
     args: [section_id],
   });
-  const brand = sectionRow.rows[0]?.brand ? String(sectionRow.rows[0].brand) : "dog";
+  const sectionBrand = sectionRow.rows[0]?.brand ? String(sectionRow.rows[0].brand) : null;
+  if (sectionBrand === null) {
+    return NextResponse.json({ error: "Section not found" }, { status: 404 });
+  }
+  if (sectionBrand !== activeBrand) {
+    return NextResponse.json({ error: "Forbidden: section belongs to another brand" }, { status: 403 });
+  }
+  const brand = sectionBrand;
 
   await db.execute({
     sql: 'INSERT INTO links (id, section_id, label, url, icon, badge, "order", enabled, link_type, media_url, brand) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)',
@@ -111,6 +128,11 @@ export async function DELETE(req: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
+
+  const brand = await getAdminBrand();
+  const ownership = await checkLinkBrand(id, brand);
+  if (ownership === "missing") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (ownership === "other-brand") return NextResponse.json({ error: "Forbidden: link belongs to another brand" }, { status: 403 });
 
   await db.execute({ sql: "DELETE FROM links WHERE id = ?", args: [id] });
   return NextResponse.json({ ok: true });

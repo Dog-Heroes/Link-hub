@@ -54,6 +54,12 @@ interface Props {
   initialLinks: LinkItem[];
   tabId?: string;
   brand?: string;
+  /** Whether the Links tab (tabId) already exists for this brand — see AGENTS.md
+   * "Admin — switch brand": a freshly-added brand (e.g. cat right after
+   * scripts/seed-cat.ts, or before it's even run) has no tab to attach
+   * sections to yet. When false, an empty-state CTA creates it instead of
+   * silently letting the user add sections to a non-existent tab_id. */
+  tabExists?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -72,11 +78,36 @@ async function api(path: string, method: string, body?: object) {
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
-export default function LinksManager({ initialSections, initialLinks, tabId = "links", brand = "dog" }: Props) {
+export default function LinksManager({ initialSections, initialLinks, tabId = "links", brand = "dog", tabExists = true }: Props) {
   const [sections, setSections] = useState(initialSections);
   const [links, setLinks] = useState(initialLinks);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [tabReady, setTabReady] = useState(tabExists);
+  const [creatingTab, setCreatingTab] = useState(false);
+  const [createTabError, setCreateTabError] = useState<string | null>(null);
+
+  // --- Create the Links tab for this brand (empty-state CTA) ---
+  const createLinksTab = useCallback(async () => {
+    setCreatingTab(true);
+    setCreateTabError(null);
+    try {
+      const res = await fetch("/api/admin/tabs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "LinksTab" }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Richiesta fallita (${res.status})`);
+      }
+      setTabReady(true);
+    } catch (e) {
+      setCreateTabError(e instanceof Error ? e.message : "Errore nella creazione della tab");
+    } finally {
+      setCreatingTab(false);
+    }
+  }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -165,22 +196,33 @@ export default function LinksManager({ initialSections, initialLinks, tabId = "l
     };
   }
 
-  // --- Empty state ---
-  if (sections.length === 0) {
+  // --- Empty state: the Links tab for this brand doesn't exist yet ---
+  if (!tabReady) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-        <p className="text-gray-400 text-sm">
-          Nessun link trovato. Esegui il seed del database.
+      <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 text-center">
+        <p className="text-gray-500 text-sm mb-4">
+          Questo brand non ha ancora una tab Link: creala per iniziare ad aggiungere sezioni e link.
         </p>
-        <code className="block mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-          npx tsx scripts/seed.ts
-        </code>
+        {createTabError && <p className="text-red-600 text-xs mb-3">{createTabError}</p>}
+        <button
+          onClick={createLinksTab}
+          disabled={creatingTab}
+          className="px-4 py-2 rounded-lg bg-[#E1251B] text-white text-sm font-bold hover:bg-[#C41E16] disabled:opacity-60 transition-colors"
+        >
+          {creatingTab ? "Creazione…" : "+ Crea la tab Links"}
+        </button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {sections.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-400">
+          Nessuna sezione ancora. Creane una qui sotto per iniziare ad aggiungere link.
+        </div>
+      )}
+
       {sections
         .sort((a, b) => a.order - b.order)
         .map((section) => {

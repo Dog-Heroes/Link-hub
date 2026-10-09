@@ -35,6 +35,42 @@ export function linksTabId(brand: Brand): string {
 }
 
 /**
+ * Tab "types" a brand's public page actually knows how to render — see
+ * src/components/hub/TabRegistry.ts for the component each `component_key`
+ * maps to, and AGENTS.md "Multi-brand" for why cat only gets Link + Store
+ * (no Piano su Misura / Shop). Used by the admin Tabs UI to offer only the
+ * types that make sense for the active brand, and by the tabs API route to
+ * validate a creation request server-side (never trust the client for this).
+ *
+ * `id` follows the existing convention (see CAT_TAB_IDS/DOG_TAB_IDS and
+ * src/config/tabs.json): plain id for dog, `-cat` suffix for cat. At most
+ * one tab per (brand, component_key) — enforced by the API route — since
+ * none of these types make sense duplicated (e.g. two Store tabs).
+ */
+export interface TabTypeOption {
+  component_key: string;
+  id: string;
+  label: string;
+  icon: string;
+}
+
+const DOG_TAB_TYPES: TabTypeOption[] = [
+  { component_key: "LinksTab", id: "links", label: "Link", icon: "link" },
+  { component_key: "ShopTab", id: "shop", label: "Shop", icon: "bag" },
+  { component_key: "QuizTab", id: "quiz", label: "Piano su Misura", icon: "sparkle" },
+  { component_key: "StoreLocatorTab", id: "stores", label: "Store", icon: "pin" },
+];
+
+const CAT_TAB_TYPES: TabTypeOption[] = [
+  { component_key: "LinksTab", id: CAT_TAB_IDS.links, label: "Link", icon: "link" },
+  { component_key: "StoreLocatorTab", id: CAT_TAB_IDS.stores, label: "Store", icon: "pin" },
+];
+
+export function tabTypesForBrand(brand: Brand): TabTypeOption[] {
+  return brand === "cat" ? CAT_TAB_TYPES : DOG_TAB_TYPES;
+}
+
+/**
  * Cookie name for the admin's active brand (dog/cat) — see
  * src/lib/admin-brand.ts (server-only: it imports next/headers, so it's
  * kept out of this module, which client components also import).
