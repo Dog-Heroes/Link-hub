@@ -38,11 +38,27 @@
  *   - Does NOT touch any "dog" row, the global `settings` table, or
  *     social_links (no Cat Heroes social account confirmed yet — add them
  *     from /admin once there are real URLs).
+ *
+ * ⚠️ Incidente 9 ott 2026: lanciato come "npx tsx scripts/seed-cat.ts" senza
+ * passare TURSO_DATABASE_URL sulla riga di comando, questo script leggeva
+ * `process.env.TURSO_DATABASE_URL` vuoto e scriveva silenziosamente su
+ * `local.db` (fallback locale) invece che sul Turso condiviso — lo script
+ * stampava comunque "successo" perché la scrittura SU QUEL file riusciva.
+ * Risultato: /cat in produzione restava vuoto, nessun errore nei log perché
+ * la query in HubShell interrogava correttamente il Turso condiviso e lo
+ * trovava — legittimamente — senza righe 'cat'. Per questo lo script ora (1)
+ * carica da solo `.env.local` con lo stesso meccanismo di Next.js, così
+ * anche lanciato bare usa lo stesso DB dell'app in locale, e (2) stampa SEMPRE
+ * il target esatto prima di scrivere (vedi describeDbTarget()).
  */
 
-import { db, migrate } from "../src/lib/db";
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
+import { db, migrate, describeDbTarget } from "../src/lib/db";
 
 async function seed() {
+  console.log(`🎯 Target DB: ${describeDbTarget()}\n`);
   console.log("🔄 Running migrations (adds brand columns + brand_settings, additive-only)...");
   await migrate();
   console.log("✅ Schema ready\n");

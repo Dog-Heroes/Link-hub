@@ -1,9 +1,54 @@
-import { createClient } from "@libsql/client";
+import { createClient, type Client } from "@libsql/client";
 
-export const db = createClient({
-  url: process.env.TURSO_DATABASE_URL ?? "file:local.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
+/**
+ * Lazily-created singleton client — deliberately NOT created at module load
+ * time. Reason: standalone scripts (scripts/seed.ts, scripts/seed-cat.ts)
+ * import `db` from this module, and in a standard ES module graph all
+ * `import` statements are hoisted and evaluated before the importing
+ * script's own top-level code runs — including a script's own call to load
+ * `.env.local` (see those scripts). If this client were built eagerly here,
+ * `process.env.TURSO_DATABASE_URL` would be read before `.env.local` had a
+ * chance to populate it, silently falling back to the local SQLite file
+ * below — exactly the bug behind the 9 Oct 2026 incident where
+ * `npx tsx scripts/seed-cat.ts` reported success but had written to
+ * `local.db` on the operator's machine instead of the shared Turso database
+ * (see AGENTS.md and those scripts for the full story). Deferring the
+ * `createClient()` call to first actual use (via this Proxy) means it only
+ * runs after the calling script has already loaded its env, however it does
+ * so — import order no longer matters.
+ */
+let _client: Client | null = null;
+
+function getClient(): Client {
+  if (!_client) {
+    _client = createClient({
+      url: process.env.TURSO_DATABASE_URL ?? "file:local.db",
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+  return _client;
+}
+
+export const db: Client = new Proxy({} as Client, {
+  get(_target, prop, _receiver) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
 });
+
+/** What `db` is currently pointed at — used by scripts to print a clear, unambiguous target before writing. Never includes the auth token. */
+export function describeDbTarget(): string {
+  const url = process.env.TURSO_DATABASE_URL;
+  if (!url) return "file:local.db (FALLBACK LOCALE — TURSO_DATABASE_URL non impostata, nessun dato va al DB condiviso)";
+  if (url.startsWith("file:")) return `${url} (file locale — NON il DB condiviso Turso)`;
+  try {
+    const { protocol, host } = new URL(url.replace(/^libsql:/, "https:"));
+    return `${protocol.replace("https:", "libsql:")}//${host} (DB remoto Turso — CONDIVISO con la produzione)`;
+  } catch {
+    return `${url} (DB remoto)`;
+  }
+}
 
 /**
  * Run all migrations to create/update the schema.

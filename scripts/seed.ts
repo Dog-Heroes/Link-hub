@@ -1,9 +1,17 @@
 /**
- * Seed script — imports current JSON config into the local SQLite DB.
+ * Seed script — imports current JSON config into the configured DB.
  * Run: npx tsx scripts/seed.ts
+ *
+ * Loads `.env.local` itself (see scripts/seed-cat.ts for why: without this,
+ * TURSO_DATABASE_URL would be empty when run bare and src/lib/db.ts would
+ * silently fall back to local.db instead of whatever DB .env.local points
+ * at — which, per AGENTS.md, is the SAME database as production).
  */
 
-import { db, migrate } from "../src/lib/db";
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
+import { db, migrate, describeDbTarget } from "../src/lib/db";
 
 // Import current config files
 import tabsConfig from "../src/config/tabs.json";
@@ -11,6 +19,7 @@ import linksConfig from "../src/config/links.json";
 import quizConfig from "../src/config/quiz.json";
 
 async function seed() {
+  console.log(`🎯 Target DB: ${describeDbTarget()}\n`);
   console.log("🔄 Running migrations...");
   await migrate();
   console.log("✅ Schema ready\n");

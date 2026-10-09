@@ -254,6 +254,11 @@ async function getContent(brand: Brand): Promise<HubContent> {
         return hardcodedFallback;
       }
     }
+    // Was silent before (see 9 Oct 2026 incident, scripts/seed-cat.ts): a
+    // non-dog brand falling back to hardcoded empty content left no trace
+    // in the Render logs, making an empty /cat indistinguishable from "no
+    // content was ever seeded" vs. "the query is actually failing".
+    console.error(`[hub] brand-aware query failed for brand="${brand}", falling back to hardcoded empty content:`, err);
     return hardcodedFallback;
   }
 }
