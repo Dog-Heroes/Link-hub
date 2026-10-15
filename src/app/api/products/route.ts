@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import { getProducts, type ShopifyProduct } from "@/lib/shopify";
-import fallbackData from "@/config/products-fallback.json";
+import { getShopCatalog } from "@/lib/shop-catalog";
+import { SHOP_COLLECTION_URL } from "@/lib/shop";
 
-export const revalidate = 300; // ISR: 5 minutes
+// Niente prerender al build: il catalogo lo legge getShopCatalog() dal sito,
+// con la sua cache in memoria di 10 minuti.
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const products = await getProducts();
-    return NextResponse.json({ products, source: "shopify" });
+    const products = await getShopCatalog();
+    return NextResponse.json(
+      { products, collectionUrl: SHOP_COLLECTION_URL },
+      { headers: { "Cache-Control": "public, max-age=60" } }
+    );
   } catch (error) {
-    console.error("[products API] Shopify fetch failed, serving fallback:", error);
-    return NextResponse.json({
-      products: fallbackData.products as ShopifyProduct[],
-      source: "fallback",
-    });
+    console.error("[products API] catalogo del sito non raggiungibile:", error);
+    return NextResponse.json(
+      { products: [], collectionUrl: SHOP_COLLECTION_URL, error: "unavailable" },
+      { status: 502 }
+    );
   }
 }
