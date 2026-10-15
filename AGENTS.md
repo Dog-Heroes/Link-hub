@@ -109,7 +109,7 @@ commit/log/documenti:
 | `AUTH_TRUST_HOST` | richiesto da NextAuth v5 dietro proxy/reverse-proxy (Render) |
 | `NEXTAUTH_URL` | URL pubblico canonico, oggi `https://link.dogheroes.it` |
 | `ADMIN_ALLOWED_EMAILS` | email/domini ammessi su `/admin` (vuoto = tutti ammessi, vedi `src/lib/auth.ts`) |
-| `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET` | lettura prodotti (tab Shop) via Admin API client_credentials |
+| `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET` | **legacy, non più letti dal codice**: dal carrello (ottobre 2026) la tab Shop legge lo storefront pubblico, vedi "Tab Shop" sotto. Si possono togliere da Render |
 | `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | mappa dello Store Locator |
 | `NEXT_PUBLIC_ENABLE_*` | **legacy, non più letti dal codice**: la visibilità delle tab oggi viene dal DB (tabella `tabs`), non da feature flag a build time |
 
@@ -141,6 +141,44 @@ attivo.
 è usato anche dal tema (`shopify-store`), da Paws (`paws-app`) e dal CRM
 (`sales-crm`). Qualunque modifica che faccia scrivere questo hub su Shopify
 va segnalata al coordinatore prima di procedere.
+
+## Tab Shop — carrello sul hub, checkout sul sito
+
+La tab Shop permette di comporre un carrello con più prodotti e quantità e
+poi manda al checkout di dogheroes.it con **tutto** il carrello (prima ogni
+prodotto apriva il checkout con una sola confezione, spesso nemmeno
+acquistabile così sul sito).
+
+- **Catalogo** (`src/lib/shop-catalog.ts`, servito da `/api/products`):
+  letto dallo storefront **pubblico** del sito, niente credenziali Shopify.
+  Prodotti e ordine = collezione `tutti-i-prodotti-cane`
+  (`/collections/<handle>/products.json`). Cache in memoria di 10 minuti; se
+  il sito non risponde si serve l'ultimo catalogo valido, altrimenti la tab
+  mostra il link alla collezione sul sito.
+- **Cibo venduto come sul sito**: surgelato e dispensa non si comprano a
+  confezione singola ma tramite il multipack collegato col metafield
+  `custom.bundle_products`. Il tema stampa la mappa base → multipack su ogni
+  pagina (`window.DH_BUNDLE_MAP`, snippet
+  `dogheroes--cross-sell-bundle-map.liquid` nel repo del tema): la leggiamo
+  dalla home e per quei prodotti offriamo le varianti del multipack
+  (surgelato mai sotto le 12 confezioni). I prodotti `subscribable` senza
+  multipack (ffbb, ffcb… dei piani Paws) sono esclusi: si comprano solo in
+  abbonamento dal Piano su Misura.
+- **Carrello** (`src/lib/cart-store.ts`): solo nel browser del visitatore
+  (localStorage, scade dopo 3 giorni), sopravvive al cambio tab e al reload.
+  A ogni caricamento del catalogo i prezzi si riallineano e le varianti non
+  più disponibili spariscono.
+- **Checkout**: link-carrello Shopify `https://www.dogheroes.it/cart/<variante>:<qta>,…`
+  + UTM fissi del hub (`cartPermalink` in `src/lib/shop.ts`). Nessuna
+  scrittura su Shopify da questo repo: il carrello lo crea Shopify quando il
+  cliente apre il link. Solo acquisto singolo: l'abbonamento resta al sito e
+  al Piano su Misura.
+- **Soglia spedizione gratuita** (`FREE_SHIPPING_THRESHOLD_CENTS` in
+  `src/lib/shop.ts`): copia di `dh_shipping_threshold` del tema
+  (`dogheroes--cart-rewards-bar.liquid`); se cambia lì va cambiata anche qui.
+  È solo informativa, il costo vero lo calcola il checkout.
+- Test: `npx tsx scripts/test-shop-catalog.ts` (offline) e `--live` (contro
+  il sito vero).
 
 ## Multi-brand: Cat Heroes (`/cat`)
 
